@@ -20,11 +20,13 @@ function pers2dir(person) {
 }
 
 function dir2pers(direction) {
-  people = {1: (0, 119), 2: (120, 269), 3: (270, 359)};
+  people = {1: [0, 119], 2: [120, 269], 3: [270, 359]};
   person = 0;
   for (const [p, d] of Object.entries(people)){
+    // console.log(p, d);
     if (d[0] <= direction && direction <= d[1]){
       person = p;
+      // console.log(person);
     }
   }
   return person;
@@ -44,11 +46,25 @@ function reached_target(pos, target) {
   }
   
   var target_width = 2 * slack;
-  return (0 <= pos_rel_a && pos_rel_a <= slack)
+
+  var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
+  var valid_dist = false;
+  if (dist > 80) {
+    comp = 45;
+    //console.log('Far');
+
+  } else if (dist < 70){
+    comp = -45;
+    //console.log('Close');
+  } else {
+    valid_dist = true;
+  }
+
+  return (0 <= pos_rel_a && pos_rel_a <= slack && valid_dist)
 }
 
 function target_spoke(person) {
-  var spoke = data['person_speaking'] == person;
+  var spoke = global.data[global.data.length - 1]['person_speaking'] == person;
   if (spoke) {
     console.log('Target spoke');
   }
@@ -208,7 +224,7 @@ async function streamDoa() {
         }
         if (interest_sum != 0) {
           roll_to = interests.indexOf(Math.max(...interests)) + 1;
-          console.log('Roll to Person ' + roll_to);
+          // console.log('Roll to Person ' + roll_to);
         }
       }
 
@@ -276,10 +292,10 @@ function circle_traj(dir) {
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
   var valid_dist = false;
   //console.log('Dist: ' + dist);
-  if (dist > 90) {
+  if (dist > 80) {
     comp = 45;
     //console.log('Far');
-  } else if (dist < 80){
+  } else if (dist < 70){
     comp = -45;
     //console.log('Close');
   } else {
@@ -309,48 +325,66 @@ function circle_traj(dir) {
 async function circle() {
   try {
     var count = 0;
+    var target_reached = reached_target(posa, global.doa);
     var trajsp = circle_traj(global.doa);
     var mov_mode = 'listen';
     var target = 0;
+    var traget_speaking = false;
+    var targeting_start_time;
     while (true) {
       var curr_time = new Date();
       var curr_time_stmp = curr_time.getTime() / 1000;
       var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
       //var trajsp = circle_traj(global.doa);
+      target_reached = reached_target(posa, global.direction);
       var trajsp = circle_traj(global.direction);
       //var trajsp = circle_traj(posa);
 
       //console.log(curr_time_stmp - global.section_start_time);
       var section_time = curr_time_stmp - global.section_start_time;
       section_time = section_time.toFixed(3);
-      //console.log('Section time: ' + section_time + 's');
+      // console.log('Section time: ' + section_time + 's');
       //console.log(curr_time_stmp, global.section_start_time);
 
       if (mov_mode == 'listen'){
+        // console.log('     DOA', global.doa)
+        target_reached = reached_target(posa, global.doa);
         trajsp = circle_traj(global.doa);
-        sprkp.color('white');
+        // sprkp.color('white');
         // console.log(section_time);
         if (section_time > 5 && global.roll_to != 0){
           mov_mode = 'target';
           target = global.direction;
         }
       } else if (mov_mode == 'target'){
+        target_reached = reached_target(posa, target);
         trajsp = circle_traj(target);
-        // var target_reached = reached_target(posa, target);
         var target_person = dir2pers(target);
-        console.log('Target: ', target, target_person)
-        var target_reached = target_spoke(target_person);
-        if (target_person == 1) {
-          sprkp.color('green');
-        } else if (target_person == 2) {
-          sprkp.color('blue');
-        } else if (target_person == 3) {
-          sprkp.color('purple');
-        } else {
-          sprkp.color('red');
+        var target_spoken = target_spoke(target_person);
+        if (!traget_speaking && target_spoken){
+          traget_speaking = true;
+          targeting_start_time = curr_time_stmp;
+        } else if (traget_speaking && !target_spoken) {
+          target_speaking = false;
         }
-        if (section_time > 30 || target_reached){
+        // console.log('Target: ', target, target_person, global.data[global.data.length - 1]['person_speaking'], target_person, target_spoken);
+        // if (target_person == 1) {
+        //   sprkp.color('green');
+        // } else if (target_person == 2) {
+        //   sprkp.color('blue');
+        // } else if (target_person == 3) {
+        //   sprkp.color('purple');
+        // } else {
+        //   sprkp.color('red');
+        // }
+
+        var targeting_time = curr_time_stmp - targeting_start_time;
+        if (section_time > 20 || (target_spoken && targeting_time >= 1)){
           global.section_start_time = curr_time_stmp;
+          section_time = curr_time_stmp - global.section_start_time;
+          section_time = section_time.toFixed(3);
+          // section_time = 0;
+          // console.log(global.section_start_time, section_time)
           mov_mode = 'listen';
         }
       }
@@ -369,10 +403,11 @@ async function circle() {
       sph_traj = coord_convert(traj);
       //console.log(sph_traj);
       //await   sprkp.roll(speed, posa % 360).then(function() { console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º') });
-
-      sprkp.roll(speed, sph_traj).then(function() {
-        //console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
-      });
+      if (!target_reached) {
+        sprkp.roll(speed, sph_traj).then(function() {
+          //console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
+        });
+      }
 
       //await sprkp.roll(speed, traj).then(function() { console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º') });
 
@@ -399,7 +434,7 @@ async function doaRoll() {
 }
 
 var sprkp = sphero("EF:C6:25:73:1A:31")
-//var sprkp = sphero("D0:4D:38:49:00:32")
+// var sprkp = sphero("D0:4D:38:49:00:32")
 //console.log(sprkp)
 console.log('Connect…')
 sprkp.connect().then(async () => {

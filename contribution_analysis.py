@@ -127,8 +127,7 @@ def contrib(mic_tuning):
                                       - 1][person_speaking-1] += 1
                             # log['response1'] = responses[0]
                             # log['response2'] = responses[1]
-                            scores, inclusivity = ctrb.contributions(
-                                responses)
+                            scores, inclusivity = ctrb.contributions(responses)
                             # log['score1'] = scores[0]
                             # log['score2'] = scores[1]
                             # log['inclusivity'] = inclusivity

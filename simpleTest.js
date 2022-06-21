@@ -89,7 +89,7 @@ async function streamDoa() {
         'score3': log_vars.score3,
         'inclusivity': log_vars.inclusivity
       });
-      //console.log(time_stmp + " Log: " + msg);
+      console.log(time_stmp + " Log: " + msg);
       pretty_print(log_vars);
       global.direction = log_vars.doa
     });
@@ -115,8 +115,8 @@ async function streamDoa() {
   }
 }
 
-//var sprkp = sphero("EF:C6:25:73:1A:31");
-var sprkp = sphero("D0:4D:38:49:00:32");
+var sprkp = sphero("EF:C6:25:73:1A:31");
+// var sprkp = sphero("D0:4D:38:49:00:32");
 sprkp.connect().then(async function() {
   // Get DOA
   streamDoa();
