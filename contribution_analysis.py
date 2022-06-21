@@ -6,7 +6,7 @@ from datetime import datetime
 import sys
 import json
 
-import convcontrib as ctrb
+import convcontrib2 as ctrb
 
 log = {
     'timestamp': datetime.timestamp(datetime.now()),
