@@ -6,7 +6,7 @@ var logger = require('./logger.js');
 //var { Scanner, Utils } = require("spherov2.js");
 
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function coord_convert(a) {
@@ -16,7 +16,43 @@ function coord_convert(a) {
 
 function pers2dir(person) {
   directions = {1: 60, 2: 180, 3: 300};
-  return directions[person]
+  return directions[person];
+}
+
+function dir2pers(direction) {
+  people = {1: (0, 119), 2: (120, 269), 3: (270, 359)};
+  person = 0;
+  for (const [p, d] of Object.entries(people)){
+    if (d[0] <= direction && direction <= d[1]){
+      person = p;
+    }
+  }
+  return person;
+}
+
+function reached_target(pos, target) {
+  var slack = 15;
+  start_a = target - slack;
+  end_a = target + slack;
+
+  var start_dist = pos - start_a;
+  var pos_rel_a = 0;
+  if (start_dist > 0) {
+    pos_rel_a = start_dist;
+  } else {
+    pos_rel_a = start_dist + 360;
+  }
+  
+  var target_width = 2 * slack;
+  return (0 <= pos_rel_a && pos_rel_a <= slack)
+}
+
+function target_spoke(person) {
+  var spoke = data['person_speaking'] == person;
+  if (spoke) {
+    console.log('Target spoke');
+  }
+  return spoke;
 }
 
 function pretty_print(entry) {
@@ -103,6 +139,7 @@ async function streamOdo() {
 async function streamDoa() {
   try {
     global.doa = 0;
+    global.data = [];
     global.direction = 0;
     var start_dt = new Date();
     global.section_start_time = start_dt.getTime();
@@ -175,22 +212,25 @@ async function streamDoa() {
         }
       }
 
-      if (roll_to == 1){
-        sprkp.color('red');
-      } else if (roll_to == 2){
-        sprkp.color('green');
-      } else if (roll_to == 3) {
-        sprkp.color('blue');
-      } else {
-        sprkp.color('white');
-      }
+      // if (roll_to == 1){
+      //   sprkp.color('red');
+      // } else if (roll_to == 2){
+      //   sprkp.color('green');
+      // } else if (roll_to == 3) {
+      //   sprkp.color('blue');
+      // } else {
+      //   sprkp.color('white');
+      // }
 
       global.doa = log_vars.doa;
+      global.data = data;
+      global.roll_to = roll_to;
       if (roll_to != 0){
         global.direction = pers2dir(roll_to);
-      } else {
-        global.direction = log_vars.doa;
       }
+      // else {
+        // global.direction = log_vars.doa;
+      // }
     });
 
     //console.log('contrib');
@@ -270,6 +310,8 @@ async function circle() {
   try {
     var count = 0;
     var trajsp = circle_traj(global.doa);
+    var mov_mode = 'listen';
+    var target = 0;
     while (true) {
       var curr_time = new Date();
       var curr_time_stmp = curr_time.getTime() / 1000;
@@ -278,24 +320,47 @@ async function circle() {
       var trajsp = circle_traj(global.direction);
       //var trajsp = circle_traj(posa);
 
-      /*if (0 < global.direction < 119){
-        sprkp.color('red');
-      } else if (120 < global.direction < 239){
-        sprkp.color('green');
-      } else {
-        sprkp.color('blue');
-      }*/
-
       //console.log(curr_time_stmp - global.section_start_time);
       var section_time = curr_time_stmp - global.section_start_time;
       section_time = section_time.toFixed(3);
       //console.log('Section time: ' + section_time + 's');
       //console.log(curr_time_stmp, global.section_start_time);
-      if (section_time > 5){
-        trajsp = circle_traj(global.direction);
-      } else if (section_time > 10) {
-        global.section_start_time = curr_time_stmp;
+
+      if (mov_mode == 'listen'){
+        trajsp = circle_traj(global.doa);
+        sprkp.color('white');
+        // console.log(section_time);
+        if (section_time > 5 && global.roll_to != 0){
+          mov_mode = 'target';
+          target = global.direction;
+        }
+      } else if (mov_mode == 'target'){
+        trajsp = circle_traj(target);
+        // var target_reached = reached_target(posa, target);
+        var target_person = dir2pers(target);
+        console.log('Target: ', target, target_person)
+        var target_reached = target_spoke(target_person);
+        if (target_person == 1) {
+          sprkp.color('green');
+        } else if (target_person == 2) {
+          sprkp.color('blue');
+        } else if (target_person == 3) {
+          sprkp.color('purple');
+        } else {
+          sprkp.color('red');
+        }
+        if (section_time > 30 || target_reached){
+          global.section_start_time = curr_time_stmp;
+          mov_mode = 'listen';
+        }
       }
+
+
+      // if (section_time > 5){
+      //   trajsp = circle_traj(global.direction);
+      // } else if (section_time > 10) {
+      //   global.section_start_time = curr_time_stmp;
+      // }
       var traj = trajsp[0];
       var speed = trajsp[1];
       //console.log(traj, speed);
