@@ -30,7 +30,7 @@ function dir2pers(direction) {
 }
 
 function reached_target(pos, target) {
-  var slack = 15;
+  var slack = 5;
   start_a = target - slack;
   end_a = target + slack;
 
@@ -45,7 +45,7 @@ function reached_target(pos, target) {
   var target_width = 2 * slack;
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
-  var valid_dist = (dist > 80 || dist < 70) ? false : true;
+  var valid_dist = (dist > 40 || dist < 35) ? false : true;
 
   return (0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist)
 }
@@ -232,15 +232,15 @@ function circle_traj(dir) {
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
 
-  if (dist > 80) { // Far
+  if (dist > 40) { // Far
     comp = 45;
-  } else if (dist < 70){ // Close
+  } else if (dist < 35){ // Close
     comp = -45;
   } else { // Just right
     comp = 0;
   }
 
-  speed = Math.abs(gen_diff) * 2/4 + 10; 
+  speed = Math.abs(gen_diff) * 2/5 + 5; 
   if (-8 < gen_diff && gen_diff < 8) {
     traj = (posa + 180) % 360;
     speed = 0; // Stasis
@@ -276,8 +276,8 @@ async function circle() {
         target_reached = reached_target(posa, global.doa);
         trajsp = circle_traj(global.doa);
         // sprkp.color('white');
-
-        var threshold = global.avrg_sp_t > 5 ? global.avrg_sp_t : 5;
+        var thresh_min = 3;
+        var threshold = global.avrg_sp_t > thresh_min ? global.avrg_sp_t : thresh_min;
         if (section_time > threshold && global.roll_to != 0){
           mov_mode = 'target';
           target = global.direction;
@@ -343,8 +343,8 @@ async function doaRoll() {
   }
 }
 
-// var sprkp = sphero("EF:C6:25:73:1A:31")
-var sprkp = sphero("D0:4D:38:49:00:32")
+var sprkp = sphero("EF:C6:25:73:1A:31")
+// var sprkp = sphero("D0:4D:38:49:00:32")
 console.log('Connect…')
 sprkp.connect().then(async () => {
   try {
