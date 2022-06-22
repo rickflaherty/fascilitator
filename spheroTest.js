@@ -73,6 +73,8 @@ function target_spoke(person) {
 
 function pretty_print(entry) {
   process.stdout.write('Timestamp: ' + entry.timestamp + '\n')
+  process.stdout.write('Section time: ' + entry.section_time + '\n')
+  process.stdout.write('Average speech time: ' + entry.avrg_speech_time + '\n')
   process.stdout.write('DOA: |');
   for (i = 0; i < Math.floor(entry.doa / 12); i++) {
     process.stdout.write(' ');
@@ -172,13 +174,15 @@ async function streamDoa() {
       var time_stmp = dt.getFullYear() + '-' + dt.getMonth() + '-' + dt.getDate() + ' ' + dt.getHours() + ':' + dt.getMinutes() + ':' + dt.getSeconds() + '.' + dt.getMilliseconds()
 
       log_vars = JSON.parse(msg)
-      //console.log(log_vars);
+      // console.log(log_vars);
 
       data.push({
         'timestamp': time_stmp,
         'doa': log_vars.doa,
         'person_speaking': log_vars.person_speaking,
         'start_time': log_vars.start_time,
+        'section_time': log_vars.section_time, 
+        'avrg_speech_time': log_vars.avrg_speech_time, 
         'speech1': log_vars.speech1,
         'speech2': log_vars.speech2,
         'speech3': log_vars.speech3,
@@ -192,6 +196,7 @@ async function streamDoa() {
       });
 
       global.section_start_time = log_vars.start_time;
+      global.avrg_sp_t = log_vars.avrg_speech_time;
 
       var responses = [log_vars.response1, log_vars.response2, log_vars.response3]
       var scores = [log_vars.score1, log_vars.score2, log_vars.score3]
@@ -331,6 +336,7 @@ async function circle() {
     var target = 0;
     var traget_speaking = false;
     var targeting_start_time;
+    var avrg_speech_time;
     while (true) {
       var curr_time = new Date();
       var curr_time_stmp = curr_time.getTime() / 1000;
@@ -352,7 +358,9 @@ async function circle() {
         trajsp = circle_traj(global.doa);
         // sprkp.color('white');
         // console.log(section_time);
-        if (section_time > 5 && global.roll_to != 0){
+        // if (avrg_sp_t > 5) {threshold = avrg_sp_t;} else {threshold = 5}
+        var threshold = global.avrg_sp_t > 5 ? global.avrg_sp_t : 5;
+        if (section_time > threshold && global.roll_to != 0){
           mov_mode = 'target';
           target = global.direction;
         }
@@ -433,8 +441,8 @@ async function doaRoll() {
   }
 }
 
-var sprkp = sphero("EF:C6:25:73:1A:31")
-// var sprkp = sphero("D0:4D:38:49:00:32")
+// var sprkp = sphero("EF:C6:25:73:1A:31")
+var sprkp = sphero("D0:4D:38:49:00:32")
 //console.log(sprkp)
 console.log('Connect…')
 sprkp.connect().then(async () => {

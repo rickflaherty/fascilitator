@@ -13,6 +13,8 @@ log = {
     'doa': 0,
     'person_speaking': 0,
     'start_time': datetime.timestamp(datetime.now()),
+    'section_time': 0, 
+    'avrg_speech_time': 0, 
     'speech1': 0,
     'speech2': 0,
     'speech3': 0,
@@ -70,6 +72,9 @@ def contrib(mic_tuning):
     scores = [1/len(participants)] * len(participants)
     inclusivity = 1
 
+    speech_count = 0;
+    avrg_speech_time = 0;
+    section_time = 0;
     # print(responses)
     # print('-----\nStart!\n\n-----')
     while True:
@@ -101,7 +106,10 @@ def contrib(mic_tuning):
                     if person_speaking != old_speaker:  # If this person wasn't already speaking…
                         start_time = datetime.timestamp(datetime.now())
                         updateLog('start_time', start_time)
+                        section_time = 0
+                        updateLog('section_time', 0)
                         number_of_speakups[person_speaking-1] += 1
+                        speech_count += 1
                         log_flag = True if updateLog(
                             'speech'+str(person_speaking), number_of_speakups[person_speaking-1]) else log_flag
                         # log_flag = True if updateLog(
@@ -159,16 +167,33 @@ def contrib(mic_tuning):
                         if time.perf_counter()-silence_ended > 0.5 and active_speaker != person:
                             active_speaker = person
                             inactive_speaker = 0
-                        # pass # ???
+                        section_time = time.perf_counter() - silence_ended
+                        updateLog('section_time', time.perf_counter() - silence_ended)
                     break   # Loop back again
         else:
             if not silence_started:  # If it wasn't silent, now it is
                 silence_started = time.perf_counter()
                 silence_gap = 0
+                # if speech_count == 1:
+                #     avrg_speech_time = section_time
+                # elif speech_count > 1:
+                #     avrg_speech_time = avrg_speech_time/(speech_count - 1) + section_time/speech_count
+                # # print(avrg_speech_time, speech_count, section_time, section_time/speech_count)
+                # log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
+                # section_time = 0
+                # updateLog('section_time', 0)
             else:
                 # If silent after someone spoke more than 2 seconds ago, noone is 'speaking' anymore
                 if silence_started and old_speaker and time.perf_counter()-silence_started > 2:
                     person_speaking = 0
+                    if speech_count == 1:
+                        avrg_speech_time = section_time
+                    elif speech_count > 1:
+                        avrg_speech_time = avrg_speech_time/(speech_count - 1) + (section_time)/speech_count
+                    # print(avrg_speech_time, speech_count, section_time, section_time/speech_count)
+                    log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
+                    section_time = 0
+                    updateLog('section_time', 0)
                     # log['person speaking'] = person_speaking
                     log_flag = True if updateLog(
                         'person_speaking', person_speaking) else log_flag
