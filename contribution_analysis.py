@@ -30,10 +30,8 @@ prev_log = log
 
 
 def updateLog(name, value):
-    # print(log[name], prev_log[name])
     if name != 'timestamp' and value != log[name]:
         log[name] = value
-        # prev_log[name] = log[name]
         return True
     elif name == 'timestamp':
         log[name] = value
@@ -50,15 +48,11 @@ def setup():
         tuning = Tuning(dev)
         tuning.write('GAMMAVAD_SR', 3.5)
         # tuning.write('GAMMAVAD_SR', 3)
-        # json_obj = json.dumps(log)
-        # print(json_obj)
-        # print(log)
         return tuning
 
 
 def contrib(mic_tuning):
     voice_angle = 0
-    # curr_voice_angle = 0
     participants = {1: (0, 119), 2: (120, 269), 3: (270, 359)}
     old_speaker = 0
     person_speaking = 0
@@ -75,16 +69,12 @@ def contrib(mic_tuning):
     speech_count = 0;
     avrg_speech_time = 0;
     section_time = 0;
-    # print(responses)
-    # print('-----\nStart!\n\n-----')
+
     while True:
-        # try:
         log_flag = False
         timestamp = datetime.timestamp(datetime.now())
         start_time = timestamp
-        # log['timestamp'] = timestamp
         updateLog('timestamp', timestamp)
-        # log_flag = True
 
         if mic_tuning.speech_detected():
             log_flag = True if updateLog(
@@ -99,69 +89,43 @@ def contrib(mic_tuning):
                 if voice_angle <= end_angle:
                     silence_started = 0  # There is no silence
                     person_speaking = person    # This person is speaking
-                    # log['person speaking'] = person_speaking
                     log_flag = True if updateLog(
                         'person_speaking', person_speaking) else log_flag
-                    # log_flag = True
                     if person_speaking != old_speaker:  # If this person wasn't already speaking…
                         start_time = datetime.timestamp(datetime.now())
                         updateLog('start_time', start_time)
+                        speech_count += 1
+                        if speech_count == 1:
+                            avrg_speech_time = section_time
+                            log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
+                        elif speech_count > 1:
+                            avrg_speech_time = avrg_speech_time * ((speech_count - 1)/speech_count) + section_time/speech_count
+                            log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
                         section_time = 0
                         updateLog('section_time', 0)
                         number_of_speakups[person_speaking-1] += 1
-                        speech_count += 1
-                        log_flag = True if updateLog(
-                            'speech'+str(person_speaking), number_of_speakups[person_speaking-1]) else log_flag
-                        # log_flag = True if updateLog(
-                        #     'speech1', number_of_speakups[0]) else log_flag
-                        # log_flag = True if updateLog(
-                        #     'speech2', number_of_speakups[1]) else log_flag
-                        # log_flag = True
-                        # print(number_of_speakups)
+                        log_flag = True if updateLog('speech'+str(person_speaking), number_of_speakups[person_speaking-1]) else log_flag
+
                         if old_speaker == 0:    # If nobody was speaking…
                             silence_ended = time.perf_counter()  # Silence ended
                             silence_gap = silence_ended - silence_started
                             # print('after {:0.2f}s of silence'.format(silence_gap))
                         else:
                             pass
-                            # print('\n')
-                        # print('Person {} is speaking at {}º'.format(
-                        #     person_speaking, Mic_tuning.direction))
-                        # print('-----')
+
                         # Someone else was speaking
                         if old_speaker and silence_gap <= 2:
                             # Record as response
-                            responses[old_speaker
-                                      - 1][person_speaking-1] += 1
-                            # log['response1'] = responses[0]
-                            # log['response2'] = responses[1]
+                            responses[old_speaker - 1][person_speaking - 1] += 1
+
                             scores, inclusivity = ctrb.contributions(responses)
-                            # log['score1'] = scores[0]
-                            # log['score2'] = scores[1]
-                            # log['inclusivity'] = inclusivity
-                            # log_flag = True if updateLog(
-                            #     'response1', responses[0]) else log_flag
-                            # log_flag = True if updateLog(
-                            #     'response2', responses[1]) else log_flag
+
                             for p in participants.keys():
                                 log_flag = True if updateLog('response'+str(p), responses[p-1]) else log_flag
-                            # log_flag = True if updateLog(
-                            #     'score1', scores[0]) else log_flag
-                            # log_flag = True if updateLog(
-                            # 'score2', scores[1]) else log_flag
-
-                            # for p in participants.keys():
                                 log_flag = True if updateLog('score'+str(p), scores[p-1]) else log_flag
-
-                            # log_flag = True if updateLog(
-                            #     'score'+str(person_speaking), scores[person_speaking-1]) else log_flag
 
                             log_flag = True if updateLog(
                                 'inclusivity', inclusivity) else log_flag
-                            # print(scores, inclusivity)
-                            # print(responses)
-                            # print('\n-----')
-                            # print(ctrb.contributions(responses))
                     else:   # If this person was already speaking…
                         # After 0.5s of speaking, make this person an 'active speaker'
                         if time.perf_counter()-silence_ended > 0.5 and active_speaker != person:
@@ -174,45 +138,30 @@ def contrib(mic_tuning):
             if not silence_started:  # If it wasn't silent, now it is
                 silence_started = time.perf_counter()
                 silence_gap = 0
-                # if speech_count == 1:
-                #     avrg_speech_time = section_time
-                # elif speech_count > 1:
-                #     avrg_speech_time = avrg_speech_time/(speech_count - 1) + section_time/speech_count
-                # # print(avrg_speech_time, speech_count, section_time, section_time/speech_count)
-                # log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
-                # section_time = 0
-                # updateLog('section_time', 0)
             else:
                 # If silent after someone spoke more than 2 seconds ago, noone is 'speaking' anymore
                 if silence_started and old_speaker and time.perf_counter()-silence_started > 2:
                     person_speaking = 0
                     if speech_count == 1:
                         avrg_speech_time = section_time
+                        log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
                     elif speech_count > 1:
-                        avrg_speech_time = avrg_speech_time/(speech_count - 1) + (section_time)/speech_count
-                    # print(avrg_speech_time, speech_count, section_time, section_time/speech_count)
-                    log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
+                        avrg_speech_time = avrg_speech_time * ((speech_count - 1)/speech_count) + section_time/speech_count
+                        log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
                     section_time = 0
                     updateLog('section_time', 0)
-                    # log['person speaking'] = person_speaking
                     log_flag = True if updateLog(
                         'person_speaking', person_speaking) else log_flag
-                    # log_flag = True
-                    # print('\n…\n\n-----')
                 else:                # Otherwise, the speaker is just inactive
                     if active_speaker:
                         inactive_speaker = active_speaker
                         active_speaker = 0
                     continue
         old_speaker = person_speaking
-        # print(log_flag)
+
         if log_flag:
             json_obj = json.dumps(log)
             print(json_obj, flush=True)
-            # print(log)
-
-        # except KeyboardInterrupt:
-        #     break
 
 
 if __name__ == "__main__":
@@ -223,7 +172,6 @@ if __name__ == "__main__":
             mic_tuning = setup()
         elif data == 'contrib':
             contrib(mic_tuning)
-            # print(json.dumps(log))
         else:
             print('Unknown input')
 

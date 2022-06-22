@@ -3,7 +3,6 @@ var EventEmitter = require('events')
 var contrib = require('./contrib.js');
 var sphero = require("sphero");
 var logger = require('./logger.js');
-//var { Scanner, Utils } = require("spherov2.js");
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -23,10 +22,8 @@ function dir2pers(direction) {
   people = {1: [0, 119], 2: [120, 269], 3: [270, 359]};
   person = 0;
   for (const [p, d] of Object.entries(people)){
-    // console.log(p, d);
     if (d[0] <= direction && direction <= d[1]){
       person = p;
-      // console.log(person);
     }
   }
   return person;
@@ -48,19 +45,9 @@ function reached_target(pos, target) {
   var target_width = 2 * slack;
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
-  var valid_dist = false;
-  if (dist > 80) {
-    comp = 45;
-    //console.log('Far');
+  var valid_dist = (dist > 80 || dist < 70) ? false : true;
 
-  } else if (dist < 70){
-    comp = -45;
-    //console.log('Close');
-  } else {
-    valid_dist = true;
-  }
-
-  return (0 <= pos_rel_a && pos_rel_a <= slack && valid_dist)
+  return (0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist)
 }
 
 function target_spoke(person) {
@@ -116,33 +103,6 @@ function pretty_print(entry) {
   process.stdout.write('\n\n');
 }
 
-function locate() {
-  var opts = {
-    flags: 0x01,
-    x: 0x0000,
-    y: 0x0000,
-    yawTare: 0x0
-  };
-  sprkp.configureLocator(opts, function(err, data){
-    console.log(err || 'data: ' + data);
-  });
-}
-
-async function readLocator() {
-  sprkp.readLocator(function(err, data){
-    if (err) {
-      console.log("error: ", err);
-    } else {
-      console.log("data:");
-      console.log("  xpos:", data.xpos);
-      console.log("  ypos:", data.ypos);
-      console.log("  xvel:", data.xvel);
-      console.log("  yvel:", data.yvel);
-      console.log("  sog:", data.sog);
-    }
-  });
-}
-
 async function streamOdo() {
   sprkp.streamOdometer(1);
 
@@ -165,9 +125,6 @@ async function streamDoa() {
     var pyshell = contrib.setUp();
     var roll_to = 0;
 
-    //console.log(global.section_start_time);
-
-    //var direction = 0;
     var myEmitter = new EventEmitter();
     myEmitter.on('contrib', function(msg) {
       var dt = new Date();
@@ -219,7 +176,6 @@ async function streamDoa() {
               prob_other_repsonds = 1 - (responses[speaker_i][i] / response_sum);
             }
             var interest = scores[i] * prob_other_repsonds;
-            // console.log('Interest ' + (i + 1) + ': ' + interest, prob_other_repsonds, scores[i]);
             interests[i] = interest;
           }
         }
@@ -233,28 +189,14 @@ async function streamDoa() {
         }
       }
 
-      // if (roll_to == 1){
-      //   sprkp.color('red');
-      // } else if (roll_to == 2){
-      //   sprkp.color('green');
-      // } else if (roll_to == 3) {
-      //   sprkp.color('blue');
-      // } else {
-      //   sprkp.color('white');
-      // }
-
       global.doa = log_vars.doa;
       global.data = data;
       global.roll_to = roll_to;
       if (roll_to != 0){
         global.direction = pers2dir(roll_to);
       }
-      // else {
-        // global.direction = log_vars.doa;
-      // }
     });
 
-    //console.log('contrib');
     contrib.contrib(pyshell, myEmitter);
 
     process.on('SIGINT', async () => {
@@ -274,91 +216,67 @@ async function streamDoa() {
 }
 
 function circle_traj(dir) {
-  var posa = 0;
+  var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;;
   var difference = 0;
   var comp = 0;
   var traj = 0;
   var speed = 0;
-  // Calculate position (angle)
-  posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
-  //console.log('Posa: ' + posa + 'º');
 
   // Calculate angle difference from DOA
   difference = dir - posa;
   if (difference < - 180) {difference += 360;}
   if (difference > 180) {difference -= 360;}
-  //console.log('Diff: ' + difference + 'º');
 
   // clockwise or anti-clockwise or no rotation
   var gen_diff = Math.ceil(difference);
-  //var gen_diff = difference;
-  //console.log('Diff: ' + gen_diff + 'º');
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
-  var valid_dist = false;
-  //console.log('Dist: ' + dist);
-  if (dist > 80) {
+
+  if (dist > 80) { // Far
     comp = 45;
-    //console.log('Far');
-  } else if (dist < 70){
+  } else if (dist < 70){ // Close
     comp = -45;
-    //console.log('Close');
-  } else {
-    valid_dist = true;
+  } else { // Just right
     comp = 0;
   }
 
-  //speed = 50;
-  speed = Math.abs(gen_diff)* 2/4; 
+  speed = Math.abs(gen_diff) * 2/4 + 10; 
   if (-8 < gen_diff && gen_diff < 8) {
     traj = (posa + 180) % 360;
-    speed = 0;
-    //console.log('Stasis');
+    speed = 0; // Stasis
   } else if (difference >= 8) {
     traj = (posa + 90 + comp) % 360;
-    //speed = 25;
   } else {
     traj = (posa + 270 - comp) % 360;
-    //speed = 25;
   }
 
-  //console.log(traj);
-  //console.log(speed);
   return [traj, speed];
 }
 
 async function circle() {
   try {
-    var count = 0;
     var target_reached = reached_target(posa, global.doa);
     var trajsp = circle_traj(global.doa);
     var mov_mode = 'listen';
     var target = 0;
     var traget_speaking = false;
     var targeting_start_time;
-    var avrg_speech_time;
     while (true) {
       var curr_time = new Date();
       var curr_time_stmp = curr_time.getTime() / 1000;
       var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
-      //var trajsp = circle_traj(global.doa);
       target_reached = reached_target(posa, global.direction);
       var trajsp = circle_traj(global.direction);
-      //var trajsp = circle_traj(posa);
 
-      //console.log(curr_time_stmp - global.section_start_time);
       var section_time = curr_time_stmp - global.section_start_time;
       section_time = section_time.toFixed(3);
       // console.log('Section time: ' + section_time + 's');
-      //console.log(curr_time_stmp, global.section_start_time);
 
       if (mov_mode == 'listen'){
-        // console.log('     DOA', global.doa)
         target_reached = reached_target(posa, global.doa);
         trajsp = circle_traj(global.doa);
         // sprkp.color('white');
-        // console.log(section_time);
-        // if (avrg_sp_t > 5) {threshold = avrg_sp_t;} else {threshold = 5}
+
         var threshold = global.avrg_sp_t > 5 ? global.avrg_sp_t : 5;
         if (section_time > threshold && global.roll_to != 0){
           mov_mode = 'target';
@@ -391,37 +309,21 @@ async function circle() {
           global.section_start_time = curr_time_stmp;
           section_time = curr_time_stmp - global.section_start_time;
           section_time = section_time.toFixed(3);
-          // section_time = 0;
-          // console.log(global.section_start_time, section_time)
           mov_mode = 'listen';
         }
       }
 
-
-      // if (section_time > 5){
-      //   trajsp = circle_traj(global.direction);
-      // } else if (section_time > 10) {
-      //   global.section_start_time = curr_time_stmp;
-      // }
       var traj = trajsp[0];
       var speed = trajsp[1];
-      //console.log(traj, speed);
 
       // Roll
       sph_traj = coord_convert(traj);
-      //console.log(sph_traj);
-      //await   sprkp.roll(speed, posa % 360).then(function() { console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º') });
+  
       if (!target_reached) {
         sprkp.roll(speed, sph_traj).then(function() {
           //console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
         });
       }
-
-      //await sprkp.roll(speed, traj).then(function() { console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º') });
-
-      // Interval
-      /*count += 1;
-      console.log(count);*/
       await delay(500);
     }
   } catch (error) {
@@ -432,7 +334,7 @@ async function circle() {
 async function doaRoll() {
   try {
     while (true) {
-      var traj = coord_convert(global.direction)
+      var traj = coord_convert(global.DOMMatrix)
       sprkp.roll(20, traj).then(function(){console.log('Roll: ' + global.direction + 'º')});
       await delay(500);
     }
@@ -443,24 +345,15 @@ async function doaRoll() {
 
 // var sprkp = sphero("EF:C6:25:73:1A:31")
 var sprkp = sphero("D0:4D:38:49:00:32")
-//console.log(sprkp)
 console.log('Connect…')
 sprkp.connect().then(async () => {
   try {
     streamOdo();
     streamDoa();
-    //console.log('stream')
-
     await delay(500);
     console.log('Start');
-    //doaRoll();
     circle();
-
-    //await delay(10000);
-    //console.log('End');
   } catch (error) {
     console.error(error);
   }
-  //await sprkp.disconnect()
-  //process.exit()
 });
