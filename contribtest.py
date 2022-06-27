@@ -1,4 +1,4 @@
-import convcontrib as ctrb
+import convcontrib2 as ctrb
 
 # row n is the number of responses that person n gets from every person
 # column m is the responses person m gives each person
@@ -10,7 +10,7 @@ a = [[0,1,2,2,2,1],
      [2,0,0,1,0,0],
      [1,0,0,0,0,0]]
 
-b = [[0,1,2,2,2,1],
+b = [[0,1,1,2,2,1],
      [1,0,0,0,0,0],
      [1,0,0,0,0,0],
      [0,0,0,0,1,0],
@@ -42,9 +42,9 @@ f = [[0,1,1],
      [1,0,1],
      [0,1,1]]
 
-# tests = [a,b,c,d,e]
+tests = [a,b,c,d,e]
 # tests = [a, d]
-tests = [f]
+# tests = [f]
 
 for i, test_matrix in enumerate(tests,1):
     scores, inclusivity = ctrb.contributions(test_matrix)
