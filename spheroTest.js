@@ -9,7 +9,7 @@ function delay(ms) {
 }
 
 function coord_convert(a) {
-  var b = (450 - a) % 360;
+  var b = Math.round((450 - a) % 360);
   return b;
 }
 
@@ -250,12 +250,12 @@ function circle_traj(dir) {
 
   speed = Math.abs(gen_diff) * 1/2; 
   if (-8 < gen_diff && gen_diff < 8) {
-    traj = (posa + 180) % 360;
+    traj = Math.round((posa + 180) % 360);
     speed = 0; // Stasis
   } else if (difference >= 8) {
-    traj = (posa + 90 + comp) % 360;
+    traj = Math.round((posa + 90 + comp) % 360);
   } else {
-    traj = (posa + 270 - comp) % 360;
+    traj = Math.round((posa + 270 - comp) % 360);
   }
 
   return [traj, speed];
@@ -289,8 +289,8 @@ function syncCircle() {
       trajsp = circle_traj(global.doa);
       // sprkp.color('white');
       var thresh_min = 3;
-      var threshold = global.avrg_sp_t > thresh_min ? global.avrg_sp_t : thresh_min;
-      if (section_time > threshold && global.roll_to != 0){
+      var threshold = global.avrg_sp_t / 2 > thresh_min ? global.avrg_sp_t / 2 : thresh_min;
+      if (section_time > threshold && global.roll_to != 0 && global.data[global.data.length - 1]['person_speaking'] != 0) {
         mov_mode = 'target';
         target = global.direction;
         target_person = dir2pers(target);
@@ -308,7 +308,7 @@ function syncCircle() {
     } else if (mov_mode == 'target'){
       target_reached = reached_target(posa, target);
       trajsp = circle_traj(target);
-      // var target_person = dir2pers(target);
+      var target_person = dir2pers(target);
       var target_spoken = target_spoke(target_person);
       if (!traget_speaking && target_spoken){
         traget_speaking = true;
@@ -317,8 +317,11 @@ function syncCircle() {
         target_speaking = false;
       }
 
+      const min_dis_min = 30;
+      var min_disobedience = global.avrg_sp_t * 2 > min_dis_min ? global.avrg_sp_t * 2 : min_dis_min;
+
       var targeting_time = curr_time_stmp - targeting_start_time;
-      if (section_time > 20 || (target_spoken && targeting_time >= 1)){
+      if (section_time > min_disobedience || (target_spoken && targeting_time >= 1)){
         global.section_start_time = curr_time_stmp;
         section_time = curr_time_stmp - global.section_start_time;
         section_time = section_time.toFixed(3);
@@ -335,16 +338,16 @@ function syncCircle() {
 
     if (speed == 0 && moving) {
       // console.log('Stop rolling');
-      sprkp.roll(speed, sph_traj);
+      sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + 'Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
     } else if (!target_reached && speed != 0) {
       moving = true;
-      sprkp.roll(speed, sph_traj);
-      // sprkp.roll(speed, sph_traj).then(function() {
-      //   console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
-      // });
+      // sprkp.roll(speed, sph_traj);
+      sprkp.roll(speed, sph_traj).then(function() {
+        console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + 'Extra: ' + global.posy + ', ' + global.posx);
+      });
     }
-  }, 1000);
+  }, 750);
 }
 
 async function doaRoll() {
@@ -376,14 +379,14 @@ function initialRoll() {
     var sph_traj = coord_convert(traj);
 
     sprkp.roll(speed, sph_traj);
-  }, 1000);
+  }, 750);
   if (target_reached) {
     return True;
   }
 }
 
-var sprkp = sphero("EF:C6:25:73:1A:31")
-// var sprkp = sphero("D0:4D:38:49:00:32")
+// var sprkp = sphero("EF:C6:25:73:1A:31")
+var sprkp = sphero("D0:4D:38:49:00:32")
 console.log('Connect…')
 sprkp.connect().then(async () => {
   try {

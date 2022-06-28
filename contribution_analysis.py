@@ -46,7 +46,8 @@ def setup():
 
     if dev:
         tuning = Tuning(dev)
-        tuning.write('GAMMAVAD_SR', 3.5)
+        tuning.write('GAMMAVAD_SR', 5)
+        # tuning.write('GAMMAVAD_SR', 3.5)
         # tuning.write('GAMMAVAD_SR', 3)
         return tuning
 
