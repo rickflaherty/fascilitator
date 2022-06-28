@@ -30,9 +30,12 @@ function dir2pers(direction) {
 }
 
 function reached_target(pos, target) {
-  var slack = 5;
-  start_a = target - slack;
-  end_a = target + slack;
+  // Environmental parameters
+  const outerDist = 60
+  const innerDist = 50
+  const slack = 2;
+  const start_a = target - slack;
+  const end_a = target + slack;
 
   var start_dist = pos - start_a;
   var pos_rel_a = 0;
@@ -45,7 +48,7 @@ function reached_target(pos, target) {
   var target_width = 2 * slack;
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
-  var valid_dist = (dist > 40 || dist < 35) ? false : true;
+  var valid_dist = innerDist < dist < outerDist;
 
   return (0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist)
 }
@@ -216,6 +219,11 @@ async function streamDoa() {
 }
 
 function circle_traj(dir) {
+  // Environmental parameters
+  const outerDist = 60
+  const innerDist = 50
+
+  // Position
   var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;;
   var difference = 0;
   var comp = 0;
@@ -232,9 +240,9 @@ function circle_traj(dir) {
 
   var dist = Math.sqrt(global.posx * global.posx + global.posy * global.posy);
 
-  if (dist > 40) { // Far
+  if (dist > outerDist) { // Far
     comp = 45;
-  } else if (dist < 35){ // Close
+  } else if (dist < innerDist){ // Close
     comp = -45;
   } else { // Just right
     comp = 0;
@@ -253,8 +261,94 @@ function circle_traj(dir) {
   return [traj, speed];
 }
 
+
+function syncCircle() {
+  var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
+  var target_reached = reached_target(posa, global.doa);
+  var trajsp = circle_traj(global.doa);
+  var mov_mode = 'listen';
+  var target = 0;
+  var traget_speaking = false;
+  var targeting_start_time;
+  var moving = false;
+
+  setInterval(() => {
+    var curr_time = new Date();
+    var curr_time_stmp = curr_time.getTime() / 1000;
+    posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
+    target_reached = reached_target(posa, global.direction);
+    trajsp = circle_traj(global.direction);
+
+    var section_time = curr_time_stmp - global.section_start_time;
+    section_time = section_time.toFixed(3);
+    // console.log('Section time: ' + section_time + 's');
+
+    if (mov_mode == 'listen'){
+      target_reached = reached_target(posa, global.doa);
+      trajsp = circle_traj(global.doa);
+      // sprkp.color('white');
+      var thresh_min = 3;
+      var threshold = global.avrg_sp_t > thresh_min ? global.avrg_sp_t : thresh_min;
+      if (section_time > threshold && global.roll_to != 0){
+        mov_mode = 'target';
+        target = global.direction;
+      }
+    } else if (mov_mode == 'target'){
+      target_reached = reached_target(posa, target);
+      trajsp = circle_traj(target);
+      var target_person = dir2pers(target);
+      var target_spoken = target_spoke(target_person);
+      if (!traget_speaking && target_spoken){
+        traget_speaking = true;
+        targeting_start_time = curr_time_stmp;
+      } else if (traget_speaking && !target_spoken) {
+        target_speaking = false;
+      }
+
+      console.log('Target: ', target, target_person, global.data[global.data.length - 1]['person_speaking'], target_person, target_spoken);
+      if (target_person == 1) {
+        sprkp.color('green');
+      } else if (target_person == 2) {
+        sprkp.color('blue');
+      } else if (target_person == 3) {
+        sprkp.color('purple');
+      } else {
+        sprkp.color('red');
+      }
+
+      var targeting_time = curr_time_stmp - targeting_start_time;
+      if (section_time > 20 || (target_spoken && targeting_time >= 1)){
+        global.section_start_time = curr_time_stmp;
+        section_time = curr_time_stmp - global.section_start_time;
+        section_time = section_time.toFixed(3);
+        mov_mode = 'listen';
+      }
+    }
+
+    var traj = trajsp[0];
+    var speed = trajsp[1];
+
+    // Roll
+    sph_traj = coord_convert(traj);
+
+    if (speed == 0 && moving) {
+      console.log('Stop rolling');
+      sprkp.roll(speed, sph_traj);
+      moving = false;
+    } else if (!target_reached && speed != 0) {
+      moving = true;
+      // sprkp.roll(speed, sph_traj);
+      sprkp.roll(speed, sph_traj).then(function() {
+        console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
+      });
+    }
+  }, 500);
+}
+
+
 async function circle() {
   try {
+    var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
     var target_reached = reached_target(posa, global.doa);
     var trajsp = circle_traj(global.doa);
     var mov_mode = 'listen';
@@ -264,7 +358,7 @@ async function circle() {
     while (true) {
       var curr_time = new Date();
       var curr_time_stmp = curr_time.getTime() / 1000;
-      var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
+      posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
       target_reached = reached_target(posa, global.direction);
       var trajsp = circle_traj(global.direction);
 
@@ -275,7 +369,7 @@ async function circle() {
       if (mov_mode == 'listen'){
         target_reached = reached_target(posa, global.doa);
         trajsp = circle_traj(global.doa);
-        // sprkp.color('white');
+        sprkp.color('white');
         var thresh_min = 3;
         var threshold = global.avrg_sp_t > thresh_min ? global.avrg_sp_t : thresh_min;
         if (section_time > threshold && global.roll_to != 0){
@@ -293,16 +387,17 @@ async function circle() {
         } else if (traget_speaking && !target_spoken) {
           target_speaking = false;
         }
-        // console.log('Target: ', target, target_person, global.data[global.data.length - 1]['person_speaking'], target_person, target_spoken);
-        // if (target_person == 1) {
-        //   sprkp.color('green');
-        // } else if (target_person == 2) {
-        //   sprkp.color('blue');
-        // } else if (target_person == 3) {
-        //   sprkp.color('purple');
-        // } else {
-        //   sprkp.color('red');
-        // }
+
+        console.log('Target: ', target, target_person, global.data[global.data.length - 1]['person_speaking'], target_person, target_spoken);
+        if (target_person == 1) {
+          sprkp.color('green');
+        } else if (target_person == 2) {
+          sprkp.color('blue');
+        } else if (target_person == 3) {
+          sprkp.color('purple');
+        } else {
+          sprkp.color('red');
+        }
 
         var targeting_time = curr_time_stmp - targeting_start_time;
         if (section_time > 20 || (target_spoken && targeting_time >= 1)){
@@ -320,11 +415,12 @@ async function circle() {
       sph_traj = coord_convert(traj);
   
       if (!target_reached) {
-        sprkp.roll(speed, sph_traj).then(function() {
+        sprkp.roll(speed, sph_traj);
+        // sprkp.roll(speed, sph_traj).then(function() {
           //console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º')
-        });
+        // });
       }
-      await delay(500);
+      await delay(250);
     }
   } catch (error) {
     console.error(error);
@@ -334,12 +430,35 @@ async function circle() {
 async function doaRoll() {
   try {
     while (true) {
-      var traj = coord_convert(global.DOMMatrix)
+      var traj = coord_convert(global.doa)
       sprkp.roll(20, traj).then(function(){console.log('Roll: ' + global.direction + 'º')});
       await delay(500);
     }
   } catch (error) {
     console.error(error);
+  }
+}
+
+function initialRoll() {
+  const target = 90;
+  var posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
+  var target_reached = reached_target(posa, target);
+
+  var go_to_home_pos = setInterval(() => {
+    target_reached = reached_target(posa, target);
+    if (!target_reached) {
+      clearInterval(go_to_home_pos);
+    };
+    posa = Math.atan2(global.posy, global.posx) * 180 / Math.PI;
+    var trajsp = circle_traj(target);
+    var traj = trajsp[0];
+    var speed = trajsp[1];
+    var sph_traj = coord_convert(traj);
+
+    sprkp.roll(speed, sph_traj);
+  }, 500);
+  if (target_reached) {
+    return True;
   }
 }
 
@@ -352,7 +471,10 @@ sprkp.connect().then(async () => {
     streamDoa();
     await delay(500);
     console.log('Start');
-    circle();
+    await initialRoll();
+    await delay(2000);
+    console.log('Go!');
+    syncCircle();
   } catch (error) {
     console.error(error);
   }

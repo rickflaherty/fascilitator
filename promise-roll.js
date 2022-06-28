@@ -119,8 +119,8 @@ async function doaRoll() {
 }
 
 
-var sprkp = sphero("D0:4D:38:49:00:32");
-//var sprkp = sphero("EF:C6:25:73:1A:31")
+// var sprkp = sphero("D0:4D:38:49:00:32");
+var sprkp = sphero("EF:C6:25:73:1A:31")
 
 console.log('Connect');
 sprkp.connect().then(async function() {
