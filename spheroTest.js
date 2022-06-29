@@ -249,6 +249,7 @@ function circle_traj(dir) {
   }
 
   speed = Math.abs(gen_diff) * 1/2; 
+  // speed = Math.abs(gen_diff) * 3/4; 
   if (-8 < gen_diff && gen_diff < 8) {
     traj = Math.round((posa + 180) % 360);
     speed = 0; // Stasis
@@ -338,14 +339,15 @@ function syncCircle() {
 
     if (speed == 0 && moving) {
       // console.log('Stop rolling');
-      sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + 'Extra: ' + global.posy + ', ' + global.posx)});
+      sprkp.roll(speed, sph_traj)
+      // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
     } else if (!target_reached && speed != 0) {
       moving = true;
-      // sprkp.roll(speed, sph_traj);
-      sprkp.roll(speed, sph_traj).then(function() {
-        console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + 'Extra: ' + global.posy + ', ' + global.posx);
-      });
+      sprkp.roll(speed, sph_traj);
+      // sprkp.roll(speed, sph_traj).then(function() {
+      //   console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx);
+      // });
     }
   }, 750);
 }
@@ -385,8 +387,8 @@ function initialRoll() {
   }
 }
 
-// var sprkp = sphero("EF:C6:25:73:1A:31")
-var sprkp = sphero("D0:4D:38:49:00:32")
+var sprkp = sphero("EF:C6:25:73:1A:31")
+// var sprkp = sphero("D0:4D:38:49:00:32")
 console.log('Connect…')
 sprkp.connect().then(async () => {
   try {
