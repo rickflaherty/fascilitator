@@ -22,6 +22,17 @@ function pers2dir(person) {
   return directions[person];
 }
 
+exports.dir2pers = function dir2pers(direction) {
+  people = {1: [0, 119], 2: [120, 269], 3: [270, 359]};
+  person = 0;
+  for (const [p, d] of Object.entries(people)){
+    if (d[0] <= direction && direction <= d[1]){
+      person = p;
+    }
+  }
+  return person;
+}
+
 exports.main = async function main() {
   var pyshell = new PythonShell('doa.py');
   pyshell.send('main');
@@ -167,7 +178,7 @@ exports.streamDoa = async function streamDoa() {
       let scores = [log_vars.score1, log_vars.score2, log_vars.score3]
 
       // prp.pretty_print(log_vars);
-      prp.pretty_print(data[data.length - 1]);
+      // prp.pretty_print(data[data.length - 1]);
       //console.log(time_stmp + " Log: " + msg);
       if (log_vars.person_speaking != 0) {
         let speaker_i = log_vars.person_speaking - 1;
