@@ -169,21 +169,21 @@ exports.facilitate = function facilitate(sprkp) {
     // console.log(sph_traj, speed, mov_mode);
 
     // sprkp.ping();
-    sprkp.roll(speed, sph_traj);
+    // sprkp.roll(speed, sph_traj);
     // console.log(target_reached);
-    if (speed <= 8 && moving) {
+    if (speed <= 0 && moving) {
       // console.log('Stop rolling');
       // sprkp.ping();
       sprkp.roll(speed, sph_traj)
     //   sprkp.roll(0, sph_traj).then(() => {console.log('Stop.')});
       // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
-    } else if (!target_reached && speed >= 8 && !moving) {
+    } else if (!target_reached && speed >= 0 && !moving) {
     //   sprkp.roll(speed, sph_traj).then(() => {console.log('Start again.')});
       // sprkp.ping();
       sprkp.roll(speed, sph_traj);
       moving = true;
-    } else if (!target_reached && speed >= 8) {
+    } else if (!target_reached && speed >= 0) {
       // moving = true;
       // sprkp.ping();
       sprkp.roll(speed, sph_traj);
