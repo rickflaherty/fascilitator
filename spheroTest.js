@@ -75,12 +75,12 @@ function circle_traj(dir) {
   if (dist > outerDist) { // Far
     comp = 45;
     // comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
-    speed += 8 * Math.min((dist-outerDist) * (2/range), 1.0);
+    speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0);
     // console.log('Far');
   } else if (dist < innerDist){ // Close
     comp = -45;
     // comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
-    speed += 8 * Math.min((innerDist - dist) * (2/range), 1.0);
+    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0);
     // console.log('Close');
   } else if (dist > centerDist + slack) {
     comp = 45 * Math.round(Math.min((dist-centerDist) * (2/range), 1.0));
@@ -207,17 +207,17 @@ function facilitate() {
     sph_traj = odo.coord_convert(traj);
     // console.log(sph_traj, speed, mov_mode);
 
-    if (speed <= 5 && moving) {
+    if (speed <= 3 && moving) {
       // console.log('Stop rolling');
       sprkp.roll(speed, sph_traj)
       // sprkp.roll(speed, sph_traj).then(() => {console.log('Stop.')});
       // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
-    } else if (!target_reached && speed >= 5 && !moving) {
+    } else if (!target_reached && speed >= 3 && !moving) {
       // sprkp.roll(speed, sph_traj).then(() => {console.log('Start again.')});
       sprkp.roll(speed, sph_traj);
       moving = true;
-    } else if (!target_reached && speed >= 5) {
+    } else if (!target_reached && speed >= 3) {
       moving = true;
       sprkp.roll(speed, sph_traj);
       // sprkp.roll(speed, sph_traj).then(function() {
