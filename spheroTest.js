@@ -7,11 +7,6 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function coord_convert(a) {
-  let b = Math.round((450 - a) % 360);
-  return b;
-}
-
 function dir2pers(direction) {
   people = {1: [0, 119], 2: [120, 269], 3: [270, 359]};
   person = 0;
@@ -26,7 +21,7 @@ function dir2pers(direction) {
 function reached_target(pos, pos_a, target) {
   // Environmental parameters
   const outerDist = 45
-  const innerDist = 40
+  const innerDist = 35
   const slack = 2;
   const target_width = 2 * slack;
   let start_a = target - slack;
@@ -48,8 +43,11 @@ function reached_target(pos, pos_a, target) {
 
 function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 45
-  const innerDist = 40
+  const outerDist = 45;
+  const innerDist = 35;
+  const range = outerDist - innerDist;
+  const centerDist = (range) / 2 + innerDist;
+  const slack = 0;
 
   // Position
   let [px, py] = odo.getPos();
@@ -63,24 +61,45 @@ function circle_traj(dir) {
   difference = dir - posa;
   if (difference < - 180) {difference += 360;}
   if (difference > 180) {difference -= 360;}
+  // console.log(posa, difference);
 
   // clockwise or anti-clockwise or no rotation
   let gen_diff = Math.ceil(difference);
+  speed = Math.abs(gen_diff) * 2/5; 
 
   let dist = Math.sqrt(px * px + py * py);
 
   if (dist > outerDist) { // Far
     comp = 45;
+    // comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
+    speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0);
+    // console.log('Far');
   } else if (dist < innerDist){ // Close
     comp = -45;
-  } else { // Just right
+    // comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
+    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0);
+    // console.log('Close');
+  } else if (dist > centerDist + slack) {
+    comp = 45 * Math.min((dist-centerDist) * (2/range), 1.0);
+    // speed += 5;
+  } else if (dist < centerDist - slack) {
+    comp = -45 * Math.min((centerDist-dist) * (2/range), 1.0);
+    // speed += 5;
+  } else {
     comp = 0;
+    // console.log('Just Right');
   }
 
-  speed = Math.abs(gen_diff) * 1/2; 
+  // } else { // Just right
+  //   comp = 0;
+  //   console.log('Just Right');
+  // }
+
+  // console.log(dist, comp);
+
   // speed = Math.abs(gen_diff) * 3/4; 
   if (-8 < gen_diff && gen_diff < 8) {
-    traj = Math.round((posa + 180) % 360);
+    // traj = Math.round((posa + 180) % 360);
     speed = 0; // Stasis
   } else if (difference >= 8) {
     traj = Math.round((posa + 90 + comp) % 360);
@@ -127,8 +146,9 @@ function facilitate() {
 
     if (mov_mode == 'listen'){
       target_reached = reached_target([px, py], posa, doa);
-      trajsp = circle_traj(coord_convert(doa));
-      // console.log(px, py, doa, trajsp);
+      // trajsp = circle_traj(odo.coord_convert(doa));
+      trajsp = circle_traj(doa);
+      // console.log(posa, doa, trajsp);
       // sprkp.color('white');
       const thresh_min = 3;
       let threshold = avrg_sp_t / 2 > thresh_min ? avrg_sp_t / 2 : thresh_min;
@@ -177,24 +197,27 @@ function facilitate() {
 
     let traj = trajsp[0];
     let speed = trajsp[1];
+    // console.log(traj, doa);
 
     // Roll
-    sph_traj = coord_convert(traj);
+    sph_traj = odo.coord_convert(traj);
     // console.log(sph_traj);
 
-    if (speed <= 10 && moving) {
+    // sprkp.roll(speed, sph_traj);
+
+    if (speed <= 0 && moving) {
       // console.log('Stop rolling');
       sprkp.roll(speed, sph_traj)
       // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
-    } else if (!target_reached && speed != 0) {
+    } else if (!target_reached && speed >= 10) {
       moving = true;
       sprkp.roll(speed, sph_traj);
       // sprkp.roll(speed, sph_traj).then(function() {
       //   console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx);
       // });
     }
-  }, 750);
+  }, 500);
 }
 
 
@@ -204,6 +227,7 @@ async function initialRoll() {
   let posa = odo.getPosa();
   let target_reached = reached_target([px, py], posa, target);
 
+  sprkp.roll(120, odo.coord_convert(90));
 
   let go_to_home_pos = setInterval(() => {
     target_reached = reached_target([px, py], posa, target);
@@ -215,10 +239,10 @@ async function initialRoll() {
     let trajsp = circle_traj(target);
     let traj = trajsp[0];
     let speed = trajsp[1];
-    let sph_traj = coord_convert(traj);
+    let sph_traj = odo.coord_convert(traj);
 
     sprkp.roll(speed, sph_traj);
-  }, 750);
+  }, 500);
   if (target_reached) {
     return true;
   }
@@ -227,8 +251,8 @@ async function initialRoll() {
 
 // Run
 // Choose Sphero
-const sprkp = sphero("EF:C6:25:73:1A:31")
-// const sprkp = sphero("D0:4D:38:49:00:32")
+// const sprkp = sphero("EF:C6:25:73:1A:31")
+const sprkp = sphero("D0:4D:38:49:00:32")
 
 //Connect to Sphero
 console.log('Connect…')

@@ -1,5 +1,11 @@
 let px, py, pa;
 
+exports.coord_convert = function coord_convert(a) {
+    let b = Math.round((450 - a) % 360);
+    return b;
+  }
+  
+
 exports.setPos = function setPos(pos) {
     px = pos[0];
     py = pos[1];
