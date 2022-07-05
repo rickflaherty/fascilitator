@@ -68,7 +68,7 @@ function circle_traj(dir) {
 
   // clockwise or anti-clockwise or no rotation
   let gen_diff = Math.ceil(difference);
-  speed = Math.abs(gen_diff) * 1/3; 
+  speed = Math.abs(gen_diff) * 2/5; 
 
   let dist = Math.sqrt(px * px + py * py);
 
@@ -126,7 +126,7 @@ function facilitate() {
   let target_person = dir2pers(target);
   let traget_speaking = false;
   let targeting_start_time;
-  let moving = false;
+  let moving = true;
 
   setInterval(() => {
     let curr_time = new Date();
@@ -183,7 +183,7 @@ function facilitate() {
         target_speaking = false;
       }
 
-      const min_dis_min = 20;
+      const min_dis_min = 10;
       let min_disobedience = avrg_sp_t * 2 > min_dis_min ? avrg_sp_t * 2 : min_dis_min;
       // console.log(min_disobedience);
 
@@ -207,6 +207,7 @@ function facilitate() {
     sph_traj = odo.coord_convert(traj);
     // console.log(sph_traj, speed, mov_mode);
 
+    sprkp.ping();
     if (speed <= 3 && moving) {
       // console.log('Stop rolling');
       sprkp.roll(speed, sph_traj)
@@ -218,13 +219,16 @@ function facilitate() {
       sprkp.roll(speed, sph_traj);
       moving = true;
     } else if (!target_reached && speed >= 3) {
-      moving = true;
+      // moving = true;
       sprkp.roll(speed, sph_traj);
       // sprkp.roll(speed, sph_traj).then(function() {
       //   console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + px + ', ' + py);
       // });
     }
-  }, 250);
+    // } else {
+    //   sprkp.ping();
+    // }
+  }, 500);
 }
 
 
@@ -239,6 +243,7 @@ async function initialRoll() {
   let go_to_home_pos = setInterval(() => {
     target_reached = reached_target([px, py], posa, target);
     if (target_reached) {
+      return true;
       clearInterval(go_to_home_pos);
     };
     [px, py] = odo.getPos();
@@ -249,7 +254,7 @@ async function initialRoll() {
     let sph_traj = odo.coord_convert(traj);
 
     sprkp.roll(speed, sph_traj);
-  }, 250);
+  }, 500);
   if (target_reached) {
     return true;
   }
