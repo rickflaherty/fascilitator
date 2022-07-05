@@ -7,8 +7,8 @@ import statistics as stats
 def from_list_of_list(list):
     G = nx.DiGraph()
     # edges = [(i, j, w) for i, row in enumerate(list) for j, w in enumerate(row) if w != 0]
-    # edges = [(i, j, w) for i, row in enumerate(list) for j, w in enumerate(row)]
-    edges = [(j, i, w) for i, row in enumerate(list) for j, w in enumerate(row)]
+    edges = [(i, j, w) for i, row in enumerate(list) for j, w in enumerate(row)]
+    # edges = [(j, i, w) for i, row in enumerate(list) for j, w in enumerate(row)]
     G.add_weighted_edges_from(edges)
     return G
 

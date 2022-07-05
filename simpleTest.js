@@ -119,7 +119,7 @@ var sprkp = sphero("EF:C6:25:73:1A:31");
 // var sprkp = sphero("D0:4D:38:49:00:32");
 sprkp.connect().then(async function() {
   // Get DOA
-  streamDoa();
+  // streamDoa();
 
   //var pyshell = doa.setUp();
   //doa.endShell(pyshell);
@@ -142,9 +142,9 @@ sprkp.connect().then(async function() {
   //pyshell.send('doaRepeat');
 
   // roll sprkp in a random direction, changing direction every second
-  /*setInterval(function() {
+  setInterval(function() {
     var direction = Math.floor(Math.random() * 360);
-    sprkp.roll(150, direction);
+    sprkp.roll(50, direction);
   }, 1000);
-  */
+  
 });
