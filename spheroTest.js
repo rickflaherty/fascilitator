@@ -183,7 +183,7 @@ function facilitate() {
         target_speaking = false;
       }
 
-      const min_dis_min = 10;
+      const min_dis_min = 16;
       let min_disobedience = avrg_sp_t * 2 > min_dis_min ? avrg_sp_t * 2 : min_dis_min;
       // console.log(min_disobedience);
 
@@ -207,27 +207,32 @@ function facilitate() {
     sph_traj = odo.coord_convert(traj);
     // console.log(sph_traj, speed, mov_mode);
 
-    sprkp.ping();
+    // sprkp.ping();
+    // sprkp.roll(0, sph_traj);
     if (speed <= 3 && moving) {
       // console.log('Stop rolling');
-      sprkp.roll(speed, sph_traj)
+      // sprkp.ping();
+      sprkp.roll(0, sph_traj)
       // sprkp.roll(speed, sph_traj).then(() => {console.log('Stop.')});
       // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
     } else if (!target_reached && speed >= 3 && !moving) {
       // sprkp.roll(speed, sph_traj).then(() => {console.log('Start again.')});
+      // sprkp.ping();
       sprkp.roll(speed, sph_traj);
       moving = true;
     } else if (!target_reached && speed >= 3) {
       // moving = true;
+      // sprkp.ping();
       sprkp.roll(speed, sph_traj);
       // sprkp.roll(speed, sph_traj).then(function() {
       //   console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + px + ', ' + py);
       // });
-    }
-    // } else {
-    //   sprkp.ping();
     // }
+    } else {
+      // sprkp.ping();
+      sprkp.roll(0, sph_traj);
+    }
   }, 500);
 }
 
@@ -278,7 +283,7 @@ sprkp.connect().then(async () => {
     console.log('Start');
     sprkp.color('orange');
     await initialRoll();
-    await delay(3000);
+    await delay(1000);
     // Start facilitating
     console.log('Go!');
     sprkp.color('white');

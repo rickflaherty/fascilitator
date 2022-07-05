@@ -166,7 +166,8 @@ exports.streamDoa = async function streamDoa() {
       let responses = [log_vars.response1, log_vars.response2, log_vars.response3]
       let scores = [log_vars.score1, log_vars.score2, log_vars.score3]
 
-      prp.pretty_print(log_vars);
+      // prp.pretty_print(log_vars);
+      prp.pretty_print(data[data.length - 1]);
       //console.log(time_stmp + " Log: " + msg);
       if (log_vars.person_speaking != 0) {
         let speaker_i = log_vars.person_speaking - 1;
