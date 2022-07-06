@@ -36,7 +36,7 @@ exports.getSectionStartTime = function getSectionStartTime() {
   return section_start_time;
 }
 
-exports.setSectionStartTime = function getSectionStartTime(new_time) {
+exports.setSectionStartTime = function setSectionStartTime(new_time) {
   section_start_time = new_time;
 }
 
@@ -92,7 +92,7 @@ exports.streamDoa = async function streamDoa() {
       'inclusivity': log_vars.inclusivity}
       data.push(entry);
 
-      section_start_time = log_vars.start_time;
+      section_start_time = log_vars.start_time * 1000;
       person_speaking = log_vars.person_speaking;
 
       // Overall data

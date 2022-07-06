@@ -1,4 +1,4 @@
-let px = 0, py = 0, pa = 90;
+let px = 0, py = 0, pa = 90, dist = 0;
 
 exports.coord_convert = function coord_convert(a) {
   let b = Math.round((450 - a) % 360);
@@ -9,6 +9,7 @@ exports.setPos = function setPos(pos) {
   px = pos[0];
   py = pos[1];
   pa = Math.atan2(py, px) * 180 / Math.PI;
+  dist = Math.sqrt(px * px + py * py);
 }
 
 exports.getPos = function getPos() {
@@ -19,12 +20,17 @@ exports.getPosa = function getPosa() {
   return pa;
 }
 
+exports.getDist = function getDist() {
+  return dist;
+}
+
 exports.streamOdo = async function streamOdo(sprkp) {
   sprkp.streamOdometer(1);
   sprkp.on('odometer', function(data) {
     px = data.xOdometer.value[0];
     py = data.yOdometer.value[0];
     pa = Math.atan2(py, px) * 180 / Math.PI;
+    dist = Math.sqrt(px * px + py * py);
     /*console.log('  x: ' + global.posx + data.xOdometer.units);
     console.log('  y: ' + global.posy + data.yOdometer.units);*/
   });
@@ -48,7 +54,7 @@ exports.reached_target = function reached_target(target) {
     pos_rel_a = start_dist + 360;
   }
 
-  let dist = Math.sqrt(px * px + py * py);
+  dist = Math.sqrt(px * px + py * py);
   let valid_dist = innerDist < dist < outerDist;
 
   return (0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist)
