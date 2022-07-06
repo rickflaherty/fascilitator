@@ -1,4 +1,5 @@
 const sp = require("./doa.js");
+const people = require("./people");
 const odo = require('./odo.js');
 // const sphero = require('sphero');
 
@@ -84,7 +85,7 @@ exports.facilitate = function facilitate(sprkp) {
   let trajsp = this.circle_traj(doa);
   let mov_mode = 'listen';
   let target = 0;
-  let target_person = sp.dir2pers(target);
+  let target_person = people.dir2pers(target);
   let traget_speaking = false;
   let targeting_start_time;
   let moving = true;
@@ -138,7 +139,7 @@ exports.facilitate = function facilitate(sprkp) {
       // target_reached = reached_target([px, py], posa, target);
       target_reached = odo.reached_target(target);
       trajsp = this.circle_traj(target);
-      let target_person = sp.dir2pers(target);
+      let target_person = people.dir2pers(target);
       let target_spoken = sp.target_spoke(target_person);
       if (!traget_speaking && target_spoken){
         traget_speaking = true;
