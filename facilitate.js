@@ -14,6 +14,27 @@ function colorCodeTarget(sprkp, person) {
     }
 }
 
+exports.initialRoll = async function initialRoll(sprkp) {
+  const target = 90;
+  let target_reached = odo.reached_target(target);
+  if (target_reached) {sprkp.roll(50, odo.coord_convert(90));}
+  
+  let go_to_home_pos = setInterval(() => {
+    target_reached = odo.reached_target(target);
+    if (target_reached) {
+      clearInterval(go_to_home_pos);
+    };
+    let trajsp = this.circle_traj(target);
+    let traj = trajsp[0];
+    let speed = trajsp[1];
+    let sph_traj = odo.coord_convert(traj);
+    sprkp.roll(speed, sph_traj);
+  }, 500);
+  if (target_reached) {
+    return true;
+  }
+}
+
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
   const outerDist = 45;
@@ -77,12 +98,15 @@ exports.circle_traj = function circle_traj(dir) {
   return [traj, speed];
 }
   
+let mov_mode = 'listen';
+exports.getMovMode = function getMovMode() {return mov_mode;}
+
 exports.facilitate = function facilitate(sprkp) {
   let doa = sp.getDoa();
   let direction = sp.getDirection();
   let target_reached = odo.reached_target(doa);
   let trajsp = this.circle_traj(doa);
-  let mov_mode = 'listen';
+  // let mov_mode = 'listen';
   let target = 0;
   let target_person = people.dir2pers(target);
   let traget_speaking = false;
@@ -91,8 +115,8 @@ exports.facilitate = function facilitate(sprkp) {
   setInterval(() => {
     let curr_time = new Date();
     let curr_time_stmp = curr_time.getTime() / 1000;
-    let [px, py] = odo.getPos();
-    let posa = odo.getPosa();
+    // let [px, py] = odo.getPos();
+    // let posa = odo.getPosa();
     direction = sp.getDirection();
 
     doa = sp.getDoa();
@@ -106,7 +130,6 @@ exports.facilitate = function facilitate(sprkp) {
     let roll_to = sp.getRollTo();
 
     if (mov_mode == 'listen'){
-      // target_reached = reached_target([px, py], posa, doa);
       target_reached = odo.reached_target(doa);
       if (!target_reached) {trajsp = this.circle_traj(doa);}
       // console.log(posa, doa, trajsp);
@@ -158,25 +181,4 @@ exports.facilitate = function facilitate(sprkp) {
       sprkp.roll(speed, sph_traj);
     }
   }, 500);
-}
-  
-exports.initialRoll = async function initialRoll(sprkp) {
-  const target = 90;
-  let target_reached = odo.reached_target(target);
-  if (target_reached) {sprkp.roll(20, odo.coord_convert(90));}
-  
-  let go_to_home_pos = setInterval(() => {
-    target_reached = odo.reached_target(target);
-    if (target_reached) {
-      clearInterval(go_to_home_pos);
-    };
-    let trajsp = this.circle_traj(target);
-    let traj = trajsp[0];
-    let speed = trajsp[1];
-    let sph_traj = odo.coord_convert(traj);
-    sprkp.roll(speed, sph_traj);
-  }, 500);
-  if (target_reached) {
-    return true;
-  }
 }

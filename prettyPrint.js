@@ -1,3 +1,4 @@
+const facil = require("./facilitate");
 
 exports.pretty_print = function pretty_print(entry) {
   // let date = new Date(entry.timestamp);
@@ -42,5 +43,6 @@ exports.pretty_print = function pretty_print(entry) {
   for (i = 0; i < Math.floor(10 * entry.inclusivity); i++) {
     process.stdout.write('■');
   }
+  process.stdout.write('\nMode: ' + facil.getMovMode());
   process.stdout.write('\n\n');
 }
