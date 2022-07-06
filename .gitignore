@@ -1,5 +1,5 @@
 /.bashrc
 /__pycache__
-/logs
+/logs/*
 /tuning_bkup.py
 /.vscode/

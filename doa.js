@@ -1,4 +1,3 @@
-const { PythonShell } = require('python-shell');
 const EventEmitter = require('events');
 const contrib = require('./contrib.js');
 const logger = require('./logger.js');
@@ -18,7 +17,6 @@ let avrg_sp_t = 0;
 let person_speaking = 0;
 
 exports.getDoa = function getDoa() {
-  // return this.coord_convert(doa);
   return doa
 }
 

@@ -1,9 +1,9 @@
 const process = require('process')
-const sp = require('./doa.js');
-const people = require("./people.js");
-const odo = require('./odo.js');
+const sp = require('./doa');
+const people = require("./people");
+const odo = require('./odo');
 const sphero = require('sphero');
-const facil = require('./facilitate.js');
+const facil = require('./facilitate');
 
 const spheros = {0: null, 1: 'EF:C6:25:73:1A:31', 2: 'D0:4D:38:49:00:32'}
 
@@ -12,13 +12,13 @@ function delay(ms) {
 }
 
 async function initiate() {
-  console.log('Start');
+  console.log('Setup…');
   sprkp.color('orange');
   await facil.initialRoll(sprkp);
 }
 
 function main() {
-  console.log('Go!');
+  console.log('Start!');
   sprkp.color('white');
   facil.facilitate(sprkp);
 }
@@ -31,7 +31,6 @@ if (process.argv.length >= 2) {
   if (process.argv[2] == 0) {useBall = false;}
   if (useBall) {
     deviceID = spheros[process.argv[2]];
-    console.log('DeviceID: ' + deviceID);
   }
 }
 const sprkp = sphero(deviceID);
@@ -44,7 +43,7 @@ people.setNumOfPeople(numOfPeople);
 
 // Connect to Sphero
 if (useBall) {
-  console.log('Connect…')
+  console.log('Connecting to ' + deviceID + '…')
   sprkp.connect().then(async () => {
     try {
       // Stream Sphero position and speech information
