@@ -5,6 +5,8 @@ const sp = require('./doa');
 const people = require("./people");
 const facil = require('./facilitate');
 
+let useBall = true;
+
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -12,7 +14,7 @@ function delay(ms) {
 function selectSphero(spheros) {
   let deviceID = "EF:C6:25:73:1A:31";
   // let deviceID = "D0:4D:38:49:00:32";
-  let useBall = true;
+  
   if (process.argv.length >= 2) {
     if (process.argv[2] == 0) {
       useBall = false;

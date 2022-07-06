@@ -1,6 +1,7 @@
 const sp = require("./doa");
 const people = require("./people");
 const odo = require('./odo');
+const prp = require('./prettyPrint');
 
 function colorCodeTarget(sprkp, person) {
   if (person == 1) {
@@ -170,6 +171,7 @@ exports.facilitate = function facilitate(sprkp) {
         section_start_time = curr_time_stmp;
         section_time = curr_time_stmp - section_start_time;
         section_time = section_time.toFixed(3);
+        prp.ppSphero();
       }
     }
 
@@ -179,6 +181,7 @@ exports.facilitate = function facilitate(sprkp) {
       let speed = trajsp[1];
       sph_traj = odo.coord_convert(traj);
       sprkp.roll(speed, sph_traj);
+      prp.ppSphero();
     }
   }, 500);
 }

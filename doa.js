@@ -115,7 +115,6 @@ exports.streamDoa = async function streamDoa() {
         for (i=0;i<people.getNumOfPeople();i++) {
           interests.push(0);
         }
-        console.log(interests);
 
         for (i = 0; i < 3; i++) {
           if (i != speaker_i) {
