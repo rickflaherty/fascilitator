@@ -1,4 +1,4 @@
-let px, py, pa;
+let px = 0, py = 0, pa = 90;
 
 exports.coord_convert = function coord_convert(a) {
     let b = Math.round((450 - a) % 360);

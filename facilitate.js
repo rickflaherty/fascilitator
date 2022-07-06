@@ -8,7 +8,7 @@ exports.circle_traj = function circle_traj(dir) {
   const innerDist = 35;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
-  const slack = 3;
+  const slack = 0;
   
   // Position
   let [px, py] = odo.getPos();
@@ -22,30 +22,32 @@ exports.circle_traj = function circle_traj(dir) {
   difference = dir - posa;
   if (difference < - 180) {difference += 360;}
   if (difference > 180) {difference -= 360;}
-  // console.log(posa, difference);
+  // console.log(dir, posa, difference);
   
   // clockwise or anti-clockwise or no rotation
   let gen_diff = Math.ceil(difference);
-  speed = Math.abs(gen_diff) * 1/3; 
+  speed = Math.abs(gen_diff) * 2/5; 
   
   let dist = Math.sqrt(px * px + py * py);
   
   if (dist > outerDist) { // Far
-    comp = 45;
-      // comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
-      speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0);
+    comp = 60;
+    // comp = 90 * Math.min((dist-outerDist) * (2/range), 1.0);
+    speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0) + 3;
       // console.log('Far');
   } else if (dist < innerDist){ // Close
-    comp = -45;
-    // comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
-    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0);
+    comp = -60;
+    // comp = -90 * Math.min((innerDist-dist) * (2/range), 1.0);
+    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0) + 3;
     // console.log('Close');
   } else if (dist > centerDist + slack) {
-    comp = 45 * Math.round(Math.min((dist-centerDist) * (2/range), 1.0));
-    // speed += 5;
+    comp = 60 * Math.min((dist-centerDist) * (2/range), 1.0);
+    // console.log(Math.min((dist-centerDist) * (2/range), 1.0))
+    speed += 3;
   } else if (dist < centerDist - slack) {
-    comp = -45 * Math.round(Math.min((centerDist-dist) * (2/range), 1.0));
-    // speed += 5;
+    comp = -60 * Math.min((centerDist-dist) * (2/range), 1.0);
+    // console.log(Math.min((centerDist-dist) * (2/range), 1.0))
+    speed += 3;
   } else {
     comp = 0;
     // console.log('Just Right');
@@ -56,8 +58,6 @@ exports.circle_traj = function circle_traj(dir) {
   //   console.log('Just Right');
   // }
   
-  // console.log(dist, comp);
-  
   // speed = Math.abs(gen_diff) * 3/4; 
   if (-5 < gen_diff && gen_diff < 5) {
     // traj = Math.round((posa + 180) % 360);
@@ -67,6 +67,9 @@ exports.circle_traj = function circle_traj(dir) {
   } else {
     traj = Math.round((posa + 270 - comp) % 360);
   }
+
+  // console.log(posa,dir, dist, comp, speed);
+
   return [traj, speed];
 }
   
@@ -93,8 +96,8 @@ exports.facilitate = function facilitate(sprkp) {
     posa = odo.getPosa();
     direction = sp.getDirection();
     // target_reached = reached_target([px, py], posa, direction);
-    target_reached = odo.reached_target(direction);
-    trajsp = this.circle_traj(direction);
+    // target_reached = odo.reached_target(direction);
+    // trajsp = this.circle_traj(direction);
 
     doa = sp.getDoa();
     data = sp.getData();
@@ -116,21 +119,21 @@ exports.facilitate = function facilitate(sprkp) {
       const thresh_min = 3;
       let threshold = avrg_sp_t / 2 > thresh_min ? avrg_sp_t / 2 : thresh_min;
       let person_speaking = sp.getPersonSpeaking();
-      if (section_time > threshold && roll_to != 0 && person_speaking != 0) {
-        mov_mode = 'target';
-        target = direction;
-        target_person = sp.dir2pers(target);
-        // console.log('Target: ', target_person, person_speaking);
-        if (target_person == 1) {
-        sprkp.color('green');
-        } else if (target_person == 2) {
-        sprkp.color('blue');
-        } else if (target_person == 3) {
-        sprkp.color('purple');
-        } else {
-        sprkp.color('red');
-        }
-      }
+      // if (section_time > threshold && roll_to != 0 && person_speaking != 0) {
+      //   mov_mode = 'target';
+      //   target = direction;
+      //   target_person = sp.dir2pers(target);
+      //   // console.log('Target: ', target_person, person_speaking);
+      //   if (target_person == 1) {
+      //   sprkp.color('green');
+      //   } else if (target_person == 2) {
+      //   sprkp.color('blue');
+      //   } else if (target_person == 3) {
+      //   sprkp.color('purple');
+      //   } else {
+      //   sprkp.color('red');
+      //   }
+      // }
     } else if (mov_mode == 'target'){
       // target_reached = reached_target([px, py], posa, target);
       target_reached = odo.reached_target(target);
@@ -167,31 +170,29 @@ exports.facilitate = function facilitate(sprkp) {
     // Roll
     sph_traj = odo.coord_convert(traj);
     // console.log(sph_traj, speed, mov_mode);
-
-    // sprkp.ping();
     // sprkp.roll(speed, sph_traj);
-    // console.log(target_reached);
+    if (!target_reached) {
+      sprkp.roll(speed, sph_traj);
+    }
+
     if (speed <= 0 && moving) {
       // console.log('Stop rolling');
-      // sprkp.ping();
       sprkp.roll(speed, sph_traj)
     //   sprkp.roll(0, sph_traj).then(() => {console.log('Stop.')});
       // sprkp.roll(speed, sph_traj).then(() => {console.log('stop: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + global.posy + ', ' + global.posx)});
       moving = false;
     } else if (!target_reached && speed >= 0 && !moving) {
     //   sprkp.roll(speed, sph_traj).then(() => {console.log('Start again.')});
-      // sprkp.ping();
       sprkp.roll(speed, sph_traj);
       moving = true;
     } else if (!target_reached && speed >= 0) {
       // moving = true;
-      // sprkp.ping();
       sprkp.roll(speed, sph_traj);
     //   sprkp.roll(speed, sph_traj).then(function() {console.log('Pos: ' + posa + 'º' + ' Traj: ' + traj + 'º' + ' Speed: ' + speed + ' Extra: ' + px + ', ' + py);});
     }
     // } else {
-    // //   sprkp.ping();
-    // //   sprkp.roll(speed, sph_traj);
+    //   sprkp.ping();
+    //   sprkp.roll(speed, sph_traj);
     // }
   }, 500);
 }
@@ -210,7 +211,7 @@ exports.initialRoll = async function initialRoll(sprkp) {
     // target_reached = reached_target([px, py], posa, target);
     target_reached = odo.reached_target(target);
     if (target_reached) {
-      return true;
+      // return true;
       clearInterval(go_to_home_pos);
     };
     [px, py] = odo.getPos();
