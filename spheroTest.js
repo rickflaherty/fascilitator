@@ -1,58 +1,65 @@
 const process = require('process')
+const sphero = require('sphero');
+const odo = require('./odo');
 const sp = require('./doa');
 const people = require("./people");
-const odo = require('./odo');
-const sphero = require('sphero');
 const facil = require('./facilitate');
-
-const spheros = {0: null, 1: 'EF:C6:25:73:1A:31', 2: 'D0:4D:38:49:00:32'}
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function initiate() {
+function selectSphero(spheros) {
+  let deviceID = "EF:C6:25:73:1A:31";
+  // let deviceID = "D0:4D:38:49:00:32";
+  let useBall = true;
+  if (process.argv.length >= 2) {
+    if (process.argv[2] == 0) {
+      useBall = false;
+      return useBall;
+    }
+    if (useBall) {
+      deviceID = spheros[process.argv[2]];
+      return sphero(deviceID);
+    }
+  }
+}
+
+async function initiate(sprkp) {
   console.log('Setup…');
   sprkp.color('orange');
   await facil.initialRoll(sprkp);
 }
 
-function main() {
+function main(sprkp) {
   console.log('Start!');
   sprkp.color('white');
   facil.facilitate(sprkp);
 }
 
-// Choose Sphero
-let deviceID = "EF:C6:25:73:1A:31";
-// let deviceID = "D0:4D:38:49:00:32";
-let useBall = true;
-if (process.argv.length >= 2) {
-  if (process.argv[2] == 0) {useBall = false;}
-  if (useBall) {
-    deviceID = spheros[process.argv[2]];
-  }
-}
-const sprkp = sphero(deviceID);
+// Select Sphero
+const spheros = {0: null, 1: 'EF:C6:25:73:1A:31', 2: 'D0:4D:38:49:00:32'}
+const sprkp = selectSphero(spheros);
 
 // Set # of people
 // Currently only supports 3 people
-let numOfPeople = 3;
-people.setNumOfPeople(numOfPeople);
-// console.log(sp.getPeopleRange(), sp.getPeopleDirections());
+people.setNumOfPeople(3);
+for (i=1;i<=3;i++) {
+  console.log('Person '+i+': ' + people.pers2dir(i) +'º');
+}
 
 // Connect to Sphero
-if (useBall) {
-  console.log('Connecting to ' + deviceID + '…')
+if (sprkp) {
+  console.log('Connecting…')
   sprkp.connect().then(async () => {
     try {
       // Stream Sphero position and speech information
       odo.streamOdo(sprkp);
       sp.streamDoa();
       await delay(500);
-      await initiate();
+      await initiate(sprkp);
       await delay(500);
-      main();
+      main(sprkp);
     } catch (error) {
       console.error(error);
     }
