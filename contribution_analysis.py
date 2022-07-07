@@ -115,7 +115,7 @@ def contrib(mic_tuning):
                             pass
 
                         # Someone else was speaking
-                        if old_speaker and silence_gap <= 2:
+                        if old_speaker and 0.5 <= silence_gap <= 2:
                             # Record as response
                             responses[old_speaker - 1][person_speaking - 1] += 1
 
