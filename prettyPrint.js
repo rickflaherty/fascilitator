@@ -1,3 +1,5 @@
+const facil = require("./facilitate");
+const odo = require('./odo');
 
 exports.pretty_print = function pretty_print(entry) {
   // let date = new Date(entry.timestamp);
@@ -43,4 +45,10 @@ exports.pretty_print = function pretty_print(entry) {
     process.stdout.write('■');
   }
   process.stdout.write('\n\n');
+}
+
+exports.ppSphero = function(){
+  process.stdout.write('\nPos: ' + odo.getPos() + ' Pos(º): '+ odo.getPosa() + ' Dist: '+ odo.getDist());
+  process.stdout.write('\nMode: ' + facil.getMovMode());
+  process.stdout.write('\n');
 }

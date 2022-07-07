@@ -2,7 +2,7 @@ let { PythonShell } = require('python-shell');
 let EventEmitter = require('events');
 
 exports.setUp = function setUp() {
-  var shell = new PythonShell('contribution_analysis.py');
+  const shell = new PythonShell('contribution_analysis.py');
   shell.send('setup');
   return shell
 }

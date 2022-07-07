@@ -1,4 +1,4 @@
-var createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 exports.createDoaLogfile = function createDoaLogfile(data, start_dt) {
   const path = 'logs/' + start_dt.getFullYear() + '-' + start_dt.getMonth() + '-' + start_dt.getDate() + '-' + start_dt.getHours() + '-' + start_dt.getMinutes() + '-' + start_dt.getSeconds() + '.csv';
