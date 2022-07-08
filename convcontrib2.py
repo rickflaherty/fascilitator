@@ -18,10 +18,7 @@ def contributions(matrix):
     pr = nx.pagerank_numpy(g, alpha=0.9)
 
     scores = list([round(v, 5) for v in pr.values()])
-
-    exclusivity = stats.stdev(scores)*math.sqrt(len(a))
-    # exclusivity = 1 if exclusivity > 1 else exclusivity
-    exclusivity = round(exclusivity, 5)
+    exclusivity = round(stats.stdev(scores)*math.sqrt(len(a)), 5)
 
     return scores, exclusivity
 
