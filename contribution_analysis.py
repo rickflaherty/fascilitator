@@ -24,7 +24,7 @@ log = {
     'score1': 0,
     'score2': 0,
     'score3': 0,
-    'inclusivity': 0
+    'exclusivity': 0
 }
 prev_log = log
 
@@ -66,7 +66,7 @@ def contrib(mic_tuning):
                  for j in range(len(participants))]
     number_of_speakups = [0] * len(participants)
     scores = [1/len(participants)] * len(participants)
-    inclusivity = 1
+    exclusivity = 1
 
     speech_count = 0;
     avrg_speech_time = 0;
@@ -120,14 +120,14 @@ def contrib(mic_tuning):
                             # Record as response
                             responses[old_speaker - 1][person_speaking - 1] += 1
 
-                            scores, inclusivity = ctrb.contributions(responses)
+                            scores, exclusivity = ctrb.contributions(responses)
 
                             for p in participants.keys():
                                 log_flag = True if updateLog('response'+str(p), responses[p-1]) else log_flag
                                 log_flag = True if updateLog('score'+str(p), scores[p-1]) else log_flag
 
                             log_flag = True if updateLog(
-                                'inclusivity', inclusivity) else log_flag
+                                'exclusivity', exclusivity) else log_flag
                     else:   # If this person was already speaking…
                         # After 0.5s of speaking, make this person an 'active speaker'
                         if time.perf_counter()-silence_ended > 0.5 and active_speaker != person:

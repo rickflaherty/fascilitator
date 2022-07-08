@@ -89,7 +89,7 @@ exports.streamDoa = async function streamDoa() {
       'score1': log_vars.score1,
       'score2': log_vars.score2,
       'score3': log_vars.score3,
-      'inclusivity': log_vars.inclusivity}
+      'exclusivity': log_vars.exclusivity}
       data.push(entry);
 
       section_start_time = log_vars.start_time * 1000;

@@ -31,7 +31,7 @@ exports.createConvoLogfile = async function createConvoLogfile(data, start_dt) {
       { id: 'score1', title: 'Person 1\'s Score' },
       { id: 'score2', title: 'Person 2\'s Score' },
       { id: 'score3', title: 'Person 3\'s Score' },
-      { id: 'inclusivity', title: 'Inclusivity' },
+      { id: 'exclusivity', title: 'Exclusivity' },
     ]
   });
   // console.log('log', data)

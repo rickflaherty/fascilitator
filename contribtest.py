@@ -40,17 +40,17 @@ e = [[0,1,0,0,0,0],
 
 f = [[0,1,1],
      [1,0,1],
-     [0,1,1]]
+     [1,1,0]]
 
-tests = [a,b,c,d,e]
+tests = [a,b,c,d,e,f]
 # tests = [a, d]
 # tests = [f]
 
 for i, test_matrix in enumerate(tests,1):
-    scores, inclusivity = ctrb.contributions(test_matrix)
+    scores, exclusivity = ctrb.contributions(test_matrix)
     print(str(i)+': ')
     print(scores)
-    print(inclusivity)
+    print(exclusivity)
 
 
 # At the moment every row and column may have to have atleast one non-zero value

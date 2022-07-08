@@ -38,9 +38,9 @@ function pretty_print(entry) {
   for (i = 0; i < Math.floor(10 * entry.score3); i++) {
     process.stdout.write('■');
   }
-  //process.stdout.write('\nInclusivity: '+entry.inclusivity + '\n\n');
-  process.stdout.write('\nInclusivity: ' + Math.round(entry.inclusivity * 100) + '% |');
-  for (i = 0; i < Math.floor(10 * entry.inclusivity); i++) {
+  //process.stdout.write('\nExclusivity: '+entry.exclusivity + '\n\n');
+  process.stdout.write('\nExclusivity: ' + Math.round(entry.exclusivity * 100) + '% |');
+  for (i = 0; i < Math.floor(10 * entry.exclusivity); i++) {
     process.stdout.write('■');
   }
   process.stdout.write('\n\n');
@@ -73,7 +73,7 @@ myEmitter.on('contrib', function(msg) {
     'score1': log_vars.score1,
     'score2': log_vars.score2,
     'score3': log_vars.score3,
-    'inclusivity': log_vars.inclusivity
+    'exclusivity': log_vars.exclusivity
   });
 
   var responses = [log_vars.response1, log_vars.response2, log_vars.response3]

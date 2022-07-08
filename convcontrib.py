@@ -31,10 +31,10 @@ def contributions(matrix):
 
     # scores = list(np.around(score_vector, 3))
 
-    inclusivity = 1-stats.stdev(scores)*math.sqrt(len(a))
-    inclusivity = 0 if inclusivity < 0 else inclusivity
+    exclusivity = stats.stdev(scores)*math.sqrt(len(a))
+    exclusivity = 1 if exclusivity > 1 else exclusivity
 
-    inclusivity = round(inclusivity, 3)
+    exclusivity = round(exclusivity, 3)
 
-    return scores, inclusivity
+    return scores, exclusivity
 
