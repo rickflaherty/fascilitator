@@ -20,7 +20,7 @@ def contributions(matrix):
     scores = list([round(v, 5) for v in pr.values()])
 
     exclusivity = stats.stdev(scores)*math.sqrt(len(a))
-    exclusivity = 1 if exclusivity > 1 else exclusivity
+    # exclusivity = 1 if exclusivity > 1 else exclusivity
     exclusivity = round(exclusivity, 5)
 
     return scores, exclusivity

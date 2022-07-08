@@ -100,7 +100,9 @@ exports.circle_traj = function circle_traj(dir) {
 }
   
 let mov_mode = 'listen';
+let target_person = people.dir2pers(target);
 exports.getMovMode = function getMovMode() {return mov_mode;}
+exports.getTarget = function getTarget() {return target_person;}
 
 exports.facilitate = function facilitate(sprkp) {
   let doa = sp.getDoa();
@@ -111,7 +113,7 @@ exports.facilitate = function facilitate(sprkp) {
   let listen_target = doa;
   let bored = 0;
   let target = 0;
-  let target_person = people.dir2pers(target);
+  // let target_person = people.dir2pers(target);
   let traget_speaking = false;
   let targeting_start_time;
   
@@ -161,7 +163,8 @@ exports.facilitate = function facilitate(sprkp) {
       target_reached = odo.reached_target(target);
       if (!target_reached) {trajsp = this.circle_traj(target);}
 
-      let target_person = people.dir2pers(target);
+      // let target_person = people.dir2pers(target);
+      target_person = people.dir2pers(target);
       let target_spoken = sp.target_spoke(target_person);
       if (!traget_speaking && target_spoken){
         traget_speaking = true;
@@ -197,7 +200,7 @@ exports.facilitate = function facilitate(sprkp) {
       let speed = trajsp[1];
       sph_traj = odo.coord_convert(traj);
       sprkp.roll(speed, sph_traj);
-      // prp.ppSphero();
+      prp.ppSphero();
     }
   }, 500);
 }
