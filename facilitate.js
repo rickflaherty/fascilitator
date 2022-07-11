@@ -149,7 +149,7 @@ exports.facilitate = function facilitate(sprkp) {
       // console.log(posa, doa, trajsp);
 
       // Switch to Target Mode
-      const thresh_min = 1000;
+      const thresh_min = 2000;
       let threshold = avrg_sp_t * 1000 / 2 > thresh_min ? avrg_sp_t * 1000 / 2 : thresh_min;
       let person_speaking = sp.getPersonSpeaking();
       // console.log(section_time, avrg_sp_t, threshold);
