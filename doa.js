@@ -102,6 +102,7 @@ exports.streamDoa = async function streamDoa() {
 
       // Print data
       prp.pretty_print(data[data.length - 1]);
+      // console.log(data[data.length - 1]);
 
       // Interest and who to roll to
       if (log_vars.person_speaking != 0) {

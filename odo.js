@@ -38,8 +38,8 @@ exports.streamOdo = async function streamOdo(sprkp) {
 
 exports.reached_target = function reached_target(target) {
   // Environmental parameters
-  const outerDist = 45;
-  const innerDist = 35;
+  const outerDist = 50;
+  const innerDist = 40;
   const slack = 3;
   const target_width = 2 * slack;
   let start_a = target - slack;
@@ -55,7 +55,10 @@ exports.reached_target = function reached_target(target) {
   }
 
   dist = Math.sqrt(px * px + py * py);
-  let valid_dist = innerDist < dist < outerDist;
+  let valid_dist = innerDist < dist && dist < outerDist;
 
-  return (0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist)
+  let reached = 0 <= pos_rel_a && pos_rel_a <= target_width && valid_dist;
+  // if (reached) {console.log(reached);}
+
+  return (reached)
 }

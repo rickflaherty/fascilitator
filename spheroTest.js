@@ -58,7 +58,7 @@ if (sprkp) {
       // Stream Sphero position and speech information
       odo.streamOdo(sprkp);
       sp.streamDoa();
-      await delay(500);
+      await delay(2000);
       await initiate(sprkp);
       await delay(500);
       main(sprkp);

@@ -1,5 +1,7 @@
-const facil = require("./facilitate");
+const readline = require('readline');
+const facil = require('./facilitate');
 const odo = require('./odo');
+const sp = require('./doa');
 
 exports.pretty_print = function pretty_print(entry) {
   // let date = new Date(entry.timestamp);
@@ -47,9 +49,19 @@ exports.pretty_print = function pretty_print(entry) {
   process.stdout.write('\n\n');
 }
 
-exports.ppSphero = function(){
-  process.stdout.write('\nPos: ' + odo.getPos() + ' Pos(º): '+ odo.getPosa() + ' Dist: '+ odo.getDist());
-  process.stdout.write('\nMode: ' + facil.getMovMode());
-  process.stdout.write('\nTarget: ' + facil.getTarget());
-  process.stdout.write('\n');
+function lineClear(n) {
+  readline.clearLine(process.stdout, 0);
+  readline.clearLine(process.stdout, 0);
+  readline.clearLine(process.stdout, 0);
+  // readline.clearLine(process.stdout, 0);
+  readline.cursorTo(process.stdout, 0, n);
+}
+
+exports.ppSphero = function ppSphero(){
+  lineClear(8);
+  process.stdout.write('DOA: ' + sp.getDoa() + 'º\n');
+  process.stdout.write('Pos: ' + odo.getPos() + ' Pos(º): '+ odo.getPosa() + ' Dist: '+ odo.getDist() + '\n');
+  process.stdout.write('Mode: ' + facil.getMovMode() + '\n');
+  process.stdout.write('Target: ' + facil.getTargetPerson() + '\n');
+  // process.stdout.write('\r\n');
 }

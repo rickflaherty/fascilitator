@@ -46,8 +46,8 @@ def setup():
 
     if dev:
         tuning = Tuning(dev)
-        tuning.write('GAMMAVAD_SR', 5)
-        # tuning.write('GAMMAVAD_SR', 4.8)
+        # tuning.write('GAMMAVAD_SR', 5)
+        tuning.write('GAMMAVAD_SR', 4.8)
         # tuning.write('GAMMAVAD_SR', 3.5)
         # tuning.write('GAMMAVAD_SR', 3)
         return tuning
@@ -116,7 +116,7 @@ def contrib(mic_tuning):
                             pass
 
                         # Someone else was speaking
-                        if old_speaker and 0.5 <= silence_gap <= 2:
+                        if old_speaker and silence_gap <= 2 and 0.3 <= (time.perf_counter() - silence_ended):
                             # Record as response
                             responses[old_speaker - 1][person_speaking - 1] += 1
 
@@ -129,8 +129,8 @@ def contrib(mic_tuning):
                             log_flag = True if updateLog(
                                 'exclusivity', exclusivity) else log_flag
                     else:   # If this person was already speaking…
-                        # After 0.5s of speaking, make this person an 'active speaker'
-                        if time.perf_counter()-silence_ended > 0.5 and active_speaker != person:
+                        # After 0.3s of speaking, make this person an 'active speaker'
+                        if time.perf_counter()-silence_ended > 0.3 and active_speaker != person:
                             active_speaker = person
                             inactive_speaker = 0
                         section_time = time.perf_counter() - silence_ended

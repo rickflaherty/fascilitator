@@ -38,11 +38,11 @@ exports.initialRoll = async function initialRoll(sprkp) {
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 45;
-  const innerDist = 35;
+  const outerDist = 50;
+  const innerDist = 40;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
-  const slack = 0;
+  const slack = 3;
   
   // Position
   let [px, py] = odo.getPos();
@@ -64,21 +64,21 @@ exports.circle_traj = function circle_traj(dir) {
   let dist = Math.sqrt(px * px + py * py);
   
   if (dist > outerDist) { // Far
-    comp = 45;
+    comp = 90;
     // comp = 90 * Math.min((dist-outerDist) * (2/range), 1.0);
     speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0) + 5;
       // console.log('Far');
   } else if (dist < innerDist){ // Close
-    comp = -45;
+    comp = -90;
     // comp = -90 * Math.min((innerDist-dist) * (2/range), 1.0);
     speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0) + 5;
     // console.log('Close');
-  } else if (dist > centerDist + slack) {
-    comp = 45 * Math.min((dist-centerDist) * (2/range), 1.0);
+  } else if (dist > centerDist) {
+    comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
     // console.log(Math.min((dist-centerDist) * (2/range), 1.0))
     speed += 5;
-  } else if (dist < centerDist - slack) {
-    comp = -45 * Math.min((centerDist-dist) * (2/range), 1.0);
+  } else if (dist < centerDist) {
+    comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
     // console.log(Math.min((centerDist-dist) * (2/range), 1.0))
     speed += 5;
   } else {
@@ -86,23 +86,37 @@ exports.circle_traj = function circle_traj(dir) {
     // console.log('Just Right');
   }
   
+  let valid_dist = innerDist < dist && dist < outerDist;
+  // console.log(valid_dist, dist);
   // clockwise or anti-clockwise or no rotation
-  if (-5 < gen_diff && gen_diff < 5) {
-    // traj = Math.round((posa + 180) % 360);
-    speed = 0; // Stasis
-  } else if (difference >= 5) {
+  if (-slack < gen_diff && gen_diff < slack) {
+    // speed -= Math.abs(gen_diff) * 2/5; // Stasis
+    if (valid_dist) {speed = 0;} // Stasis
+    else {speed = 5;} //Math.abs(dist-centerDist);
+
     traj = Math.round((posa + 90 + comp) % 360);
+    // if (valid_dist) {traj = Math.round((posa + 90 + comp) % 360);}
+    // else {traj = Math.round((posa + 90 + comp) % 360);}
+
+  } else if (gen_diff >= slack) {
+    traj = Math.round((posa + 90 + comp/4) % 360);
+    // if (valid_dist) {traj = Math.round((posa + 90 + comp/4) % 360);}
+    // else {traj = Math.round((posa + 90 + comp) % 360);}
   } else {
-    traj = Math.round((posa + 270 - comp) % 360);
+    traj = Math.round((posa + 270 - comp/4) % 360);
+    // if (valid_dist) {traj = Math.round((posa + 270 - comp/4) % 360);}
+    // else {traj = Math.round((posa + 270 - comp) % 360);}
   }
   // console.log(posa,dir, dist, comp, speed);
   return [traj, speed];
 }
   
 let mov_mode = 'listen';
-let target_person = people.dir2pers(target);
+let target_person = 0;
+let target = 90;
 exports.getMovMode = function getMovMode() {return mov_mode;}
-exports.getTarget = function getTarget() {return target_person;}
+exports.getTargetPerson = function getTargetPerson() {return target_person;}
+exports.getTarget = function getTarget() {return target;}
 
 exports.facilitate = function facilitate(sprkp) {
   let doa = sp.getDoa();
@@ -112,8 +126,8 @@ exports.facilitate = function facilitate(sprkp) {
   // let mov_mode = 'listen';
   let listen_target = doa;
   let bored = 0;
-  let target = 0;
-  // let target_person = people.dir2pers(target);
+  target = 0;
+  // target_person = people.dir2pers(target);
   let traget_speaking = false;
   let targeting_start_time;
   
@@ -135,7 +149,7 @@ exports.facilitate = function facilitate(sprkp) {
     let roll_to = sp.getRollTo();
 
     if (mov_mode == 'listen'){
-      // let person_sp = sp.getPersonSpeaking();
+      let person_sp = sp.getPersonSpeaking();
       // const min_pat_min = 10;
       // let min_patience = avrg_sp_t * 2 > min_pat_min ? avrg_sp_t * 2 : min_pat_min;
       // bored += 0.5;
@@ -144,8 +158,20 @@ exports.facilitate = function facilitate(sprkp) {
       //   // console.log('Move to '+doa, bored)
       //   if (bored > min_patience) {bored -= min_patience;}
       // }
-      target_reached = odo.reached_target(listen_target);
-      if (!target_reached) {trajsp = this.circle_traj(doa);}
+
+
+      // Use Listen Target
+      // target_reached = odo.reached_target(listen_target);
+      // if (!target_reached) {
+      //   trajsp = this.circle_traj(listen_target);
+      // } else {
+      //   listen_target = doa;
+      // }
+
+      // Just roll to DOA of voice
+      if (person_sp) {listen_target = doa}
+      trajsp = this.circle_traj(listen_target);
+
       // console.log(posa, doa, trajsp);
 
       // Switch to Target Mode
@@ -174,14 +200,14 @@ exports.facilitate = function facilitate(sprkp) {
       }
 
       // Boredom (Switch to Listen Mode)
-      const min_dis_min = 10000;
-      let min_disobedience = avrg_sp_t * 2000 > min_dis_min ? avrg_sp_t * 2000 : min_dis_min;
+      // const min_dis_min = 10000;
+      // let min_disobedience = avrg_sp_t * 2000 > min_dis_min ? avrg_sp_t * 2000 : min_dis_min;
 
       // Switch to Listen Mode
       let targeting_time = curr_time_stmp - targeting_start_time;
       // console.log(targeting_time, section_time, avrg_sp_t);
       if (target_spoken && section_time >= 1000){ // No disobedience
-      // if (section_time > min_disobedience || (target_spoken && section_time >= 1000)){ // && targeting_time >= 5
+      // if (section_time > min_disobedience || (target_spoken && section_time >= 1000)){ // && targeting_time >= 5000
         mov_mode = 'listen';
         sprkp.color('white');
         listen_target = doa;
@@ -200,7 +226,8 @@ exports.facilitate = function facilitate(sprkp) {
       let speed = trajsp[1];
       sph_traj = odo.coord_convert(traj);
       sprkp.roll(speed, sph_traj);
-      prp.ppSphero();
+      // console.log('\n\n');
+      // prp.ppSphero();
     }
   }, 500);
 }
