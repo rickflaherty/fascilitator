@@ -39,8 +39,8 @@ exports.initialRoll = async function initialRoll(sprkp) {
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 50;
-  const innerDist = 40;
+  const outerDist = 45;
+  const innerDist = 35;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
   const slack = 0;
@@ -99,12 +99,14 @@ exports.circle_traj = function circle_traj(dir) {
     // else {traj = Math.round((posa + 90 + comp) % 360);}
 
   } else if (gen_diff >= slack) {
-    traj = Math.round((posa + 90 + comp/6) % 360);
-    // if (valid_dist) {traj = Math.round((posa + 90 + comp/4) % 360);}
+    // traj = Math.round((posa + 90 + comp/6) % 360);
+    traj = valid_dist ? Math.round((posa + 90 + comp/5) % 360):Math.round((posa + 90 + comp/3) % 360); 
+    // if (valid_dist) {traj = Math.round((posa + 90) % 360);} else {traj = Math.round((posa + 90 + comp/6) % 360);}
     // else {traj = Math.round((posa + 90 + comp) % 360);}
   } else {
-    traj = Math.round((posa + 270 - comp/6) % 360);
-    // if (valid_dist) {traj = Math.round((posa + 270 - comp/4) % 360);}
+    // traj = Math.round((posa + 270 - comp/6) % 360);
+    traj = valid_dist ? Math.round((posa + 270 + comp/5) % 360):Math.round((posa + 270 - comp/3) % 360);
+    // if (valid_dist) {traj = Math.round((posa + 270) % 360);} else {traj = Math.round((posa + 270 - comp/6) % 360);}
     // else {traj = Math.round((posa + 270 - comp) % 360);}
   }
   // console.log(posa,dir, dist, comp, speed);
