@@ -54,9 +54,9 @@ exports.getPersonSpeaking = function getPersonSpeaking() {
 
 exports.target_spoke = function target_spoke(person) {
   let spoke = person_speaking == person;
-  if (spoke) {
-    console.log('Target spoke');
-  }
+  // if (spoke) {
+  //   console.log('Target spoke');
+  // }
   return spoke;
 }
 

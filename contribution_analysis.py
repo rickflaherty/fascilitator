@@ -79,8 +79,9 @@ def contrib(mic_tuning):
         updateLog('timestamp', timestamp)
 
         if mic_tuning.speech_detected():
-            log_flag = True if updateLog(
-                    'doa', mic_tuning.direction) else log_flag
+            # log_flag = True if updateLog(
+            #         'doa', mic_tuning.direction) else log_flag
+            updateLog('doa', mic_tuning.direction)
             for person, border in participants.items():
                 voice_angle = mic_tuning.direction - \
                     border[0] if mic_tuning.direction - \
