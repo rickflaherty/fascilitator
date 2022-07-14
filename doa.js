@@ -82,17 +82,8 @@ exports.streamDoa = async function streamDoa(n) {
         'doa': log_vars.doa,
         'person_speaking': log_vars.person_speaking,
         'speech': log_vars.speech, 
-        // 'speech1': log_vars.speech1,
-        // 'speech2': log_vars.speech2,
-        // 'speech3': log_vars.speech3,
         'responses': log_vars.responses,
-        // 'response1': log_vars.response1,
-        // 'response2': log_vars.response2,
-        // 'response3': log_vars.response3,
         'scores': log_vars.scores,
-        // 'score1': log_vars.score1,
-        // 'score2': log_vars.score2,
-        // 'score3': log_vars.score3,
         'exclusivity': log_vars.exclusivity
       }
       data.push(snap);
@@ -103,15 +94,14 @@ exports.streamDoa = async function streamDoa(n) {
       // Overall data
       avrg_sp_t = log_vars.avrg_speech_time;
       let responses = log_vars.responses
-      // [log_vars.response1, log_vars.response2, log_vars.response3]
       let scores = log_vars.scores
-      // [log_vars.score1, log_vars.score2, log_vars.score3]
 
       // Print data
       prp.pretty_print(data[data.length - 1]);
-      // console.log(data[data.length - 1]);
 
       // Interest and who to roll to
+      // TODO Move this to the Python code
+      // vars: speaker, num_of_people, responses, scores, participants[speaker][mid]
       if (log_vars.person_speaking != null) {
         let speaker_i = log_vars.person_speaking;
         let response_sum = 0;

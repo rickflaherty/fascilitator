@@ -1,8 +1,7 @@
-from tracemalloc import Snapshot
 from tuning import Tuning
 import usb.core
 import usb.util
-import time
+# import time
 from datetime import datetime
 import sys
 import json
@@ -16,12 +15,12 @@ class Group:
     def __init__(self, n=3):
         self.setNumOfPeople(n)
 
-    def setNumOfPeople(self, n):
+    def setNumOfPeople(self, n: int):
         self.numOfPeople = n
 
-        width = 360 / n
+        width = int(360 / n)
         start = 0
-        mid = start + width / 2
+        mid = int(start + width / 2)
         end = start + width - 1
         self.participants = {person: {'start': width*person+start, 'mid': width*person+mid, 'end': width*person+end} for person in range(n)}
 
@@ -52,33 +51,33 @@ class Snap:
             self.data = prev_snapshot.data
             self.updated_significantly = False
 
-    def update(self, key, value):
+    def update(self, key: str, value):
         valid_key = key in self.data.keys()
         if valid_key and self.data[key] != value:
             self.data[key] = value
             if key not in ['timestamp', 'start_time', 'section_time', 'doa']: self.updated_significantly = True
 
-    def batchUpdate(self, new_data):
+    def batchUpdate(self, new_data: dict):
         for key, value in new_data.items():
             self.update(key, value)
 
 
-def is_within_angle_range(angle, angle_range):
+def is_within_angle_range(angle, angle_range: list[int]):
     """Determine if angle is within a range (360º == 0º)"""
     alt_angle = angle - angle_range[0] if angle - angle_range[0] >= 0 else angle - angle_range[0] + 360
     end_angle = angle_range[1] - angle_range[0] if angle_range[1] - angle_range[0] > 0 else angle_range[1] - angle_range[0] + 360
     return alt_angle <= end_angle
 
 
-def setAvrgST(count, curr_average, time):
+def setAvrgST(count: int, curr_average: float, time: float):
     """Given the count and exisiting average time interval, update the average time inteval"""
     if count > 1:
         return curr_average * ((count - 1)/count) + time/count
     return time
 
 
-def setup(n):
-    """Set up the mic tuning."""
+def setup(n: int):
+    """Set up the mic tuning and group."""
     dev = usb.core.find(idVendor=0x2886, idProduct=0x0018)
     group = Group(n)
 
@@ -88,7 +87,7 @@ def setup(n):
         return [tuning, group]
 
 
-def contrib(mic_tuning, group):
+def contrib(mic_tuning: Tuning, group: Group):
     """Print a snapshot of the conversation to console whenever there updated information"""
     prev_snapshot = Snap()
 
@@ -117,39 +116,34 @@ def contrib(mic_tuning, group):
 
         doa = mic_tuning.direction
         speech_detected = mic_tuning.speech_detected()
-        if speech_detected: # and curr_time - silence_started >= 0.3
-            # silence_started = 0
+        if speech_detected:
             silent = False
             speaker = [person for person, angles in group.participants.items() if is_within_angle_range(doa, [angles['start'], angles['end']])][0]
+            speaker_changed = speaker != prev_speaker
+            if speaker_changed:
+                speech_count += 1
+                speech = curr_snapshot.data['speech']
+                speech[speaker] += 1
+                if prev_speaker == None: # Silence -> Speaking
+                    silence_ended = curr_time
+                elif curr_time - silence_ended >= 0.3: # Someone -> different someone speaking
+                    responses[prev_speaker][speaker] += 1
+                    scores, exclusivity = ctrb.contributions(responses)
+                # Reset Section
+                start_time = curr_time
+                section_time = 0
+            elif curr_time - silence_ended >= 0.3 and speaker != active_speaker: # A person continues speaking for longer than 0.3s
+                active_speaker = speaker
         else:
-            if silent == False:
+            if silent == False: # Speaking -> Silence
                 silent = True
                 silence_started = curr_time
-            elif prev_speaker != None and curr_time - silence_started >= 2:
+            elif prev_speaker != None and curr_time - silence_started >= 2: # Speaking -> Silence for more than 2s
                 speaker = None
+                avrg_speech_time = setAvrgST(speech_count, avrg_speech_time, section_time - 2)
                 section_time = 0
-            elif active_speaker: # If silent for less than 2 second, then the speaker is just inactive
+            elif active_speaker: # If silent for less than 2s, then the speaker is just inactive
                 active_speaker = None
-                # speaker = [person for person, angles in group.participants.items() if is_within_angle_range(doa, [angles['start'], angles['end']])][0]
-
-        speaker_changed = speaker != prev_speaker
-        if speaker != None and speaker_changed:
-            speech_count += 1
-            avrg_speech_time = setAvrgST(speech_count, avrg_speech_time, section_time)
-            speech = curr_snapshot.data['speech']
-            speech[speaker] += 1
-            if prev_speaker == None:
-                silence_ended = curr_time
-            elif curr_time - silence_ended >= 0.3:
-                # There was a response
-                responses[prev_speaker][speaker] += 1
-                scores, exclusivity = ctrb.contributions(responses)
-            # Reset Section
-            # prev_speaker = speaker
-            start_time = curr_time
-            section_time = 0
-        elif speaker != None and curr_time - silence_ended >= 0.3 and speaker != active_speaker:
-            active_speaker = speaker
         prev_speaker = speaker
 
         # Update Snap
