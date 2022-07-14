@@ -1,4 +1,5 @@
 const readline = require('readline');
+const people = require('./people');
 const facil = require('./facilitate');
 const odo = require('./odo');
 const sp = require('./doa');
@@ -20,32 +21,24 @@ exports.pretty_print = function pretty_print(entry) {
 
   process.stdout.write('Person speaking: ' + entry.person_speaking + '\n');
 
-  process.stdout.write('Person 1: \n');
-  process.stdout.write('Spoke ' + entry.speech1 + ' times\n');
-  process.stdout.write('  Response: ' + entry.response1 + '\n');
-  process.stdout.write('  Score: ' + Math.round(entry.score1 * 100) + '% |');
-  for (i = 0; i < Math.floor(10 * entry.score1); i++) {
-    process.stdout.write('■');
+  const n = people.getNumOfPeople()
+  for (let i=0;i<n;i++) {
+    let score_cubes = '';
+    for (let j = 0; j < Math.floor(10 * entry.scores[i]); j++) {
+      score_cubes += '■';
+    }
+    process.stdout.write(`Person ${i}: 
+    Spoke ${entry.speech[i]} times
+    Response: ${entry.responses[i]}
+    Score: ${Math.round(entry.scores[i]*100)}% | ${score_cubes}
+`);
   }
-  process.stdout.write('\nPerson 2: \n');
-  process.stdout.write('  Spoke ' + entry.speech2 + ' times\n');
-  process.stdout.write('  Response: ' + entry.response2 + '\n');
-  process.stdout.write('  Score: ' + Math.round(entry.score2 * 100) + '% |');
-  for (i = 0; i < Math.floor(10 * entry.score2); i++) {
-    process.stdout.write('■');
-  }
-  process.stdout.write('\nPerson 3: \n');
-  process.stdout.write('  Spoke ' + entry.speech3 + ' times\n');
-  process.stdout.write('  Response: ' + entry.response3 + '\n');
-  process.stdout.write('  Score: ' + Math.round(entry.score3 * 100) + '% |');
-  for (i = 0; i < Math.floor(10 * entry.score3); i++) {
-    process.stdout.write('■');
-  }
-  //process.stdout.write('\nExclusivity: '+entry.exclusivity + '\n\n');
-  process.stdout.write('\nExclusivity: ' + Math.round(entry.exclusivity * 100) + '% |');
+
+  let exclusivity_cubes = '';
   for (i = 0; i < Math.floor(10 * entry.exclusivity); i++) {
-    process.stdout.write('■');
+    exclusivity_cubes += '■';
   }
+  process.stdout.write(`Exclusivity: ' ${Math.round(entry.exclusivity * 100)}% | ${exclusivity_cubes}`);
   process.stdout.write('\n\n');
 }
 

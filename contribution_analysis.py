@@ -1,3 +1,4 @@
+from tracemalloc import Snapshot
 from tuning import Tuning
 import usb.core
 import usb.util
@@ -6,175 +7,183 @@ from datetime import datetime
 import sys
 import json
 
-import convcontrib2 as ctrb
+import convcontrib as ctrb
 
-log = {
-    'timestamp': datetime.timestamp(datetime.now()),
-    'doa': 0,
-    'person_speaking': 0,
-    'start_time': datetime.timestamp(datetime.now()),
-    'section_time': 0, 
-    'avrg_speech_time': 0, 
-    'speech1': 0,
-    'speech2': 0,
-    'speech3': 0,
-    'response1': [0,0,0],
-    'response2': [0,0,0],
-    'response3': [0,0,0],
-    'score1': 0,
-    'score2': 0,
-    'score3': 0,
-    'exclusivity': 0
-}
-prev_log = log
+class Group:
+    numOfPeople = int()
+    participants = dict()
+
+    def __init__(self, n=3):
+        self.setNumOfPeople(n)
+
+    def setNumOfPeople(self, n):
+        self.numOfPeople = n
+
+        width = 360 / n
+        start = 0
+        mid = start + width / 2
+        end = start + width - 1
+        self.participants = {person: {'start': width*person+start, 'mid': width*person+mid, 'end': width*person+end} for person in range(n)}
 
 
-def updateLog(name, value):
-    if name != 'timestamp' and value != log[name]:
-        log[name] = value
-        return True
-    elif name == 'timestamp':
-        log[name] = value
-        return False
-    else:
-        return False
+class Snap:
+
+    updated_significantly = False
+
+    data = {
+        'timestamp': 0,
+        'start_time': 0,
+        'section_time': 0, 
+        'avrg_speech_time': 0, 
+        'doa': 0,
+        'person_speaking': 0,
+        'speech': [],
+        'responses': [],
+        'scores': [],
+        'exclusivity': 1
+    }
+
+    def __init__(self, prev_snapshot = None):
+        if not prev_snapshot:
+            curr_time = datetime.timestamp(datetime.now())
+            self.data['timestamp'] = curr_time
+            self.data['start_time'] = curr_time
+        else:
+            self.data = prev_snapshot.data
+            self.updated_significantly = False
+
+    def update(self, key, value):
+        valid_key = key in self.data.keys()
+        if valid_key and self.data[key] != value:
+            self.data[key] = value
+            if key not in ['timestamp', 'start_time', 'section_time', 'doa']: self.updated_significantly = True
+
+    def batchUpdate(self, new_data):
+        for key, value in new_data.items():
+            self.update(key, value)
 
 
-def setup():
+def is_within_angle_range(angle, angle_range):
+    """Determine if angle is within a range (360º == 0º)"""
+    alt_angle = angle - angle_range[0] if angle - angle_range[0] >= 0 else angle - angle_range[0] + 360
+    end_angle = angle_range[1] - angle_range[0] if angle_range[1] - angle_range[0] > 0 else angle_range[1] - angle_range[0] + 360
+    return alt_angle <= end_angle
+
+
+def setAvrgST(count, curr_average, time):
+    """Given the count and exisiting average time interval, update the average time inteval"""
+    if count > 1:
+        return curr_average * ((count - 1)/count) + time/count
+    return time
+
+
+def setup(n):
     """Set up the mic tuning."""
     dev = usb.core.find(idVendor=0x2886, idProduct=0x0018)
+    group = Group(n)
 
     if dev:
         tuning = Tuning(dev)
-        # tuning.write('GAMMAVAD_SR', 5)
         tuning.write('GAMMAVAD_SR', 4.8)
-        # tuning.write('GAMMAVAD_SR', 3.5)
-        # tuning.write('GAMMAVAD_SR', 3)
-        return tuning
+        return [tuning, group]
 
 
-def contrib(mic_tuning):
-    voice_angle = 0
-    participants = {1: (0, 119), 2: (120, 269), 3: (270, 359)}
-    old_speaker = 0
-    person_speaking = 0
-    inactive_speaker = 0
-    active_speaker = 0
-    silence_started = time.perf_counter()
-    silence_gap = 0
-    responses = [[0 for i in range(len(participants))]
-                 for j in range(len(participants))]
-    number_of_speakups = [0] * len(participants)
-    scores = [1/len(participants)] * len(participants)
+def contrib(mic_tuning, group):
+    """Print a snapshot of the conversation to console whenever there updated information"""
+    prev_snapshot = Snap()
+
+    curr_time = datetime.timestamp(datetime.now())
+    start_time = curr_time
+    silence_started = curr_time
+    silent = True
+
+    prev_speaker = None
+    speaker = None
+    active_speaker = None
+
+    speech_count = 0
+    avrg_speech_time = 0
+
+    speech = [0 for i in range(group.numOfPeople)]
+    responses = [[0 for i in range(group.numOfPeople)] for j in range(group.numOfPeople)]
+    scores = [1/group.numOfPeople for i in range(group.numOfPeople)]
     exclusivity = 1
 
-    speech_count = 0;
-    avrg_speech_time = 0;
-    section_time = 0;
-
     while True:
-        log_flag = False
-        timestamp = datetime.timestamp(datetime.now())
-        start_time = timestamp
-        updateLog('timestamp', timestamp)
+        # Determine snap
+        curr_snapshot = Snap(prev_snapshot)
+        curr_time = round(datetime.timestamp(datetime.now()), 5)
+        section_time = curr_time - start_time
 
-        if mic_tuning.speech_detected():
-            # log_flag = True if updateLog(
-            #         'doa', mic_tuning.direction) else log_flag
-            updateLog('doa', mic_tuning.direction)
-            for person, border in participants.items():
-                voice_angle = mic_tuning.direction - \
-                    border[0] if mic_tuning.direction - \
-                    border[0] > 0 else mic_tuning.direction-border[0]+360
-                end_angle = border[1]-border[0] if border[1] - \
-                    border[0] > 0 else border[1]-border[0]+360
-
-                if voice_angle <= end_angle:
-                    silence_started = 0  # There is no silence
-                    person_speaking = person    # This person is speaking
-                    log_flag = True if updateLog(
-                        'person_speaking', person_speaking) else log_flag
-                    if person_speaking != old_speaker:  # If this person wasn't already speaking…
-                        start_time = datetime.timestamp(datetime.now())
-                        updateLog('start_time', start_time)
-                        speech_count += 1
-                        if speech_count == 1:
-                            avrg_speech_time = section_time
-                            log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
-                        elif speech_count > 1:
-                            avrg_speech_time = avrg_speech_time * ((speech_count - 1)/speech_count) + section_time/speech_count
-                            log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
-                        section_time = 0
-                        updateLog('section_time', 0)
-                        number_of_speakups[person_speaking-1] += 1
-                        log_flag = True if updateLog('speech'+str(person_speaking), number_of_speakups[person_speaking-1]) else log_flag
-
-                        if old_speaker == 0:    # If nobody was speaking…
-                            silence_ended = time.perf_counter()  # Silence ended
-                            silence_gap = silence_ended - silence_started
-                            # print('after {:0.2f}s of silence'.format(silence_gap))
-                        else:
-                            pass
-
-                        # Someone else was speaking
-                        if old_speaker and silence_gap <= 2 and 0.3 <= (time.perf_counter() - silence_ended):
-                            # Record as response
-                            responses[old_speaker - 1][person_speaking - 1] += 1
-
-                            scores, exclusivity = ctrb.contributions(responses)
-
-                            for p in participants.keys():
-                                log_flag = True if updateLog('response'+str(p), responses[p-1]) else log_flag
-                                log_flag = True if updateLog('score'+str(p), scores[p-1]) else log_flag
-
-                            log_flag = True if updateLog(
-                                'exclusivity', exclusivity) else log_flag
-                    else:   # If this person was already speaking…
-                        # After 0.3s of speaking, make this person an 'active speaker'
-                        if time.perf_counter()-silence_ended > 0.3 and active_speaker != person:
-                            active_speaker = person
-                            inactive_speaker = 0
-                        section_time = time.perf_counter() - silence_ended
-                        updateLog('section_time', time.perf_counter() - silence_ended)
-                    break   # Loop back again
+        doa = mic_tuning.direction
+        speech_detected = mic_tuning.speech_detected()
+        if speech_detected: # and curr_time - silence_started >= 0.3
+            # silence_started = 0
+            silent = False
+            speaker = [person for person, angles in group.participants.items() if is_within_angle_range(doa, [angles['start'], angles['end']])][0]
         else:
-            if not silence_started:  # If it wasn't silent, now it is
-                silence_started = time.perf_counter()
-                silence_gap = 0
-            else:
-                # If silent after someone spoke more than 2 seconds ago, noone is 'speaking' anymore
-                if silence_started and old_speaker and time.perf_counter()-silence_started > 2:
-                    person_speaking = 0
-                    if speech_count == 1:
-                        avrg_speech_time = section_time
-                        log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
-                    elif speech_count > 1:
-                        avrg_speech_time = avrg_speech_time * ((speech_count - 1)/speech_count) + section_time/speech_count
-                        log_flag = True if updateLog('avrg_speech_time', avrg_speech_time) else log_flag
-                    section_time = 0
-                    updateLog('section_time', 0)
-                    log_flag = True if updateLog(
-                        'person_speaking', person_speaking) else log_flag
-                else:                # Otherwise, the speaker is just inactive
-                    if active_speaker:
-                        inactive_speaker = active_speaker
-                        active_speaker = 0
-                    continue
-        old_speaker = person_speaking
+            if silent == False:
+                silent = True
+                silence_started = curr_time
+            elif prev_speaker != None and curr_time - silence_started >= 2:
+                speaker = None
+                section_time = 0
+            elif active_speaker: # If silent for less than 2 second, then the speaker is just inactive
+                active_speaker = None
+                # speaker = [person for person, angles in group.participants.items() if is_within_angle_range(doa, [angles['start'], angles['end']])][0]
 
-        if log_flag:
-            json_obj = json.dumps(log)
+        speaker_changed = speaker != prev_speaker
+        if speaker != None and speaker_changed:
+            speech_count += 1
+            avrg_speech_time = setAvrgST(speech_count, avrg_speech_time, section_time)
+            speech = curr_snapshot.data['speech']
+            speech[speaker] += 1
+            if prev_speaker == None:
+                silence_ended = curr_time
+            elif curr_time - silence_ended >= 0.3:
+                # There was a response
+                responses[prev_speaker][speaker] += 1
+                scores, exclusivity = ctrb.contributions(responses)
+            # Reset Section
+            # prev_speaker = speaker
+            start_time = curr_time
+            section_time = 0
+        elif speaker != None and curr_time - silence_ended >= 0.3 and speaker != active_speaker:
+            active_speaker = speaker
+        prev_speaker = speaker
+
+        # Update Snap
+        data = {
+            'timestamp': curr_time,
+            'start_time': start_time,
+            'section_time': section_time, 
+            'avrg_speech_time': avrg_speech_time, 
+            'doa': doa,
+            'person_speaking': speaker,
+            'speech': speech,
+            'responses': responses,
+            'scores': scores,
+            'exclusivity': exclusivity
+        }
+        curr_snapshot.batchUpdate(data)
+
+        # Print snap
+        if curr_snapshot.updated_significantly:
+            json_obj = json.dumps(curr_snapshot.data)
             print(json_obj, flush=True)
-
+        
+        prev_snapshot = curr_snapshot
 
 if __name__ == "__main__":
     while True:
         data = sys.stdin.readline()
         data = data.split('\n')[0]
+        data, *n = data.split(' ')
+        n = int(n[0]) if len(n) > 0 else 3
         if data == 'setup':
-            mic_tuning = setup()
+            mic_tuning, group = setup(n)
         elif data == 'contrib':
-            contrib(mic_tuning)
+            contrib(mic_tuning, group)
         else:
             print('Unknown input')
 

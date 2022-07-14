@@ -44,9 +44,13 @@ const spheros = {0: null, 1: 'EF:C6:25:73:1A:31', 2: 'D0:4D:38:49:00:32'}
 const sprkp = selectSphero(spheros);
 
 // Set # of people
-// Currently only supports 3 people
-people.setNumOfPeople(3);
-for (i=1;i<=3;i++) {
+let n = 3
+if (process.argv.length > 3) {
+  console.log(process.argv[3]);
+  n = process.argv[3];
+}
+people.setNumOfPeople(n);
+for (i=1;i<=n;i++) {
   console.log('Person '+i+': ' + people.pers2dir(i) +'º');
 }
 
@@ -57,7 +61,7 @@ if (sprkp) {
     try {
       // Stream Sphero position and speech information
       odo.streamOdo(sprkp);
-      sp.streamDoa();
+      sp.streamDoa(n);
       await delay(2000);
       await initiate(sprkp);
       await delay(500);
@@ -68,5 +72,5 @@ if (sprkp) {
   });
 } else { // Or analyze using Mic-Array w/o Sphero
   console.log('Analysis…');
-  sp.streamDoa();
+  sp.streamDoa(n);
 }

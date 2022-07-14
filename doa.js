@@ -60,11 +60,11 @@ exports.target_spoke = function target_spoke(person) {
   return spoke;
 }
 
-exports.streamDoa = async function streamDoa() {
+exports.streamDoa = async function streamDoa(n) {
   try {
     let start_dt = new Date();
     section_start_time = start_dt.getTime();
-    const pyshell = contrib.setUp();
+    const pyshell = contrib.setUp(n);
 
     let myEmitter = new EventEmitter();
     myEmitter.on('contrib', function(msg) {
@@ -74,39 +74,46 @@ exports.streamDoa = async function streamDoa() {
 
       // Section data
       let log_vars = JSON.parse(msg)
-      let entry = {'timestamp': time_stmp,
-      'doa': log_vars.doa,
-      'person_speaking': log_vars.person_speaking,
-      'start_time': log_vars.start_time,
-      'section_time': log_vars.section_time, 
-      'avrg_speech_time': log_vars.avrg_speech_time, 
-      'speech1': log_vars.speech1,
-      'speech2': log_vars.speech2,
-      'speech3': log_vars.speech3,
-      'response1': log_vars.response1,
-      'response2': log_vars.response2,
-      'response3': log_vars.response3,
-      'score1': log_vars.score1,
-      'score2': log_vars.score2,
-      'score3': log_vars.score3,
-      'exclusivity': log_vars.exclusivity}
-      data.push(entry);
+      let snap = {
+        'timestamp': time_stmp,
+        'start_time': log_vars.start_time,
+        'section_time': log_vars.section_time, 
+        'avrg_speech_time': log_vars.avrg_speech_time, 
+        'doa': log_vars.doa,
+        'person_speaking': log_vars.person_speaking,
+        'speech': log_vars.speech, 
+        // 'speech1': log_vars.speech1,
+        // 'speech2': log_vars.speech2,
+        // 'speech3': log_vars.speech3,
+        'responses': log_vars.responses,
+        // 'response1': log_vars.response1,
+        // 'response2': log_vars.response2,
+        // 'response3': log_vars.response3,
+        'scores': log_vars.scores,
+        // 'score1': log_vars.score1,
+        // 'score2': log_vars.score2,
+        // 'score3': log_vars.score3,
+        'exclusivity': log_vars.exclusivity
+      }
+      data.push(snap);
 
       section_start_time = log_vars.start_time * 1000;
       person_speaking = log_vars.person_speaking;
 
       // Overall data
       avrg_sp_t = log_vars.avrg_speech_time;
-      let responses = [log_vars.response1, log_vars.response2, log_vars.response3]
-      let scores = [log_vars.score1, log_vars.score2, log_vars.score3]
+      let responses = log_vars.responses
+      // [log_vars.response1, log_vars.response2, log_vars.response3]
+      let scores = log_vars.scores
+      // [log_vars.score1, log_vars.score2, log_vars.score3]
 
       // Print data
       prp.pretty_print(data[data.length - 1]);
       // console.log(data[data.length - 1]);
 
       // Interest and who to roll to
-      if (log_vars.person_speaking != 0) {
-        let speaker_i = log_vars.person_speaking - 1;
+      if (log_vars.person_speaking != null) {
+        let speaker_i = log_vars.person_speaking;
         let response_sum = 0;
         for (i = 0; i < people.getNumOfPeople(); i++) {
           response_sum += responses[speaker_i][i];

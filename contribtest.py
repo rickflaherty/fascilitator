@@ -1,4 +1,4 @@
-import convcontrib2 as ctrb
+import convcontrib as ctrb
 
 # row n is the number of responses that person n gets from every person
 # column m is the responses person m gives each person
@@ -47,15 +47,10 @@ g = [[0,0,1],
      [0,0,0]]
 
 tests = [a,b,c,d,e,f,g]
-# tests = [a, d]
-# tests = [f]
 
 for i, test_matrix in enumerate(tests,1):
     scores, exclusivity = ctrb.contributions(test_matrix)
     print(str(i)+': ')
     print(scores)
     print(exclusivity)
-
-
-# At the moment every row and column may have to have atleast one non-zero value
 
