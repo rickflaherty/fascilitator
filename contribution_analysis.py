@@ -106,7 +106,7 @@ def contrib(mic_tuning: Tuning, group: Group):
     speech = [0 for i in range(group.numOfPeople)]
     responses = [[0 for i in range(group.numOfPeople)] for j in range(group.numOfPeople)]
     scores = [1/group.numOfPeople for i in range(group.numOfPeople)]
-    exclusivity = 1
+    exclusivity = 0
 
     while True:
         # Determine snap
