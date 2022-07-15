@@ -101,7 +101,7 @@ exports.streamDoa = async function streamDoa() {
       let scores = [log_vars.score1, log_vars.score2, log_vars.score3]
 
       // Print data
-      prp.pretty_print(data[data.length - 1]);
+      // prp.pretty_print(data[data.length - 1]);
       // console.log(data[data.length - 1]);
 
       // Interest and who to roll to

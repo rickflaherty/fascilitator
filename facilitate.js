@@ -15,35 +15,47 @@ function colorCodeTarget(sprkp, person) {
     }
 }
 
-exports.initialRoll = async function initialRoll(sprkp) {
+async function waitUntil(condition) {
+  return await new Promise(resolve => {
+    const interval = setInterval(() => {
+      if (condition) {
+        resolve('foo');
+        clearInterval(interval);
+      };
+    }, 1000);
+  });
+}
+
+exports.initialRoll = function initialRoll(sprkp, callback) {
   const target = 90;
   let target_reached = odo.reached_target(target);
   if (target_reached[0]) {sprkp.roll(50, odo.coord_convert(90));}
-  
+
   let go_to_home_pos = setInterval(() => {
+    // stasis = false;
     target_reached = odo.reached_target(target);
-    if (target_reached[0]) {
+    if (!target_reached[0]) {
+      let trajsp = this.circle_traj(target);
+      let traj = trajsp[0];
+      let speed = trajsp[1];
+      let sph_traj = odo.coord_convert(traj);
+      sprkp.roll(speed, sph_traj);
+      // console.log(speed, sph_traj);
+    } else {
+      sprkp.roll(0, 0);
+      callback(true)
       clearInterval(go_to_home_pos);
     };
-    stasis = false;
-    let trajsp = this.circle_traj(target);
-    let traj = trajsp[0];
-    let speed = trajsp[1];
-    let sph_traj = odo.coord_convert(traj);
-    sprkp.roll(speed, sph_traj);
   }, 500);
-  if (target_reached[0]) {
-    return true;
-  }
 }
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 40;
-  const innerDist = 30;
+  const outerDist = 48;
+  const innerDist = 38;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
-  const slack = 0;
+  const slack = 10;
   
   // Position
   let [px, py] = odo.getPos();
@@ -60,7 +72,7 @@ exports.circle_traj = function circle_traj(dir) {
   // console.log(dir, posa, difference);
   
   let gen_diff = Math.ceil(difference);
-  let fund_speed = Math.abs(gen_diff) * 2/5
+  let fund_speed = Math.abs(gen_diff) * 1/3
   speed = fund_speed; 
   
   let dist = Math.sqrt(px * px + py * py);
@@ -68,31 +80,34 @@ exports.circle_traj = function circle_traj(dir) {
   if (dist > outerDist) { // Far
     comp = 90;
     // comp = 90 * Math.min((dist-outerDist) * (2/range), 1.0);
-    speed += 8 * Math.min((dist-outerDist) * (2/range), 1.0) + 5;
+    speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0) + 7;
       // console.log('Far');
   } else if (dist < innerDist){ // Close
     comp = -90;
     // comp = -90 * Math.min((innerDist-dist) * (2/range), 1.0);
-    speed += 8 * Math.min((innerDist - dist) * (2/range), 1.0) + 5;
+    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0) + 7;
     // console.log('Close');
   } else if (dist > centerDist) {
     comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
     // console.log(Math.min((dist-centerDist) * (2/range), 1.0))
-    speed += 8;
+    speed += 7;
   } else if (dist < centerDist) {
     comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
     // console.log(Math.min((centerDist-dist) * (2/range), 1.0))
-    speed += 8;
+    speed += 7;
     // console.log('Just Right');
   }
   
   let valid_dist = innerDist < dist && dist < outerDist;
+  let divisor_l = Math.round(Math.abs(4 * (gen_diff/180)))+1
+  let divisor_s = Math.round(Math.abs(2 * (gen_diff/180)))+1
+  // console.log(divisor_l, divisor_s);
   // console.log(valid_dist, dist);
   // clockwise or anti-clockwise or no rotation
   if (-slack < gen_diff && gen_diff < slack) {
     // speed -= Math.abs(gen_diff) * 2/5; // Stasis
     if (valid_dist) {speed -= fund_speed+1;} // Stasis
-    else {speed = 5;} //Math.abs(dist-centerDist);
+    else {8;} //Math.abs(dist-centerDist);
 
     traj = Math.round((posa + 90 + comp) % 360);
     // if (valid_dist) {traj = Math.round((posa + 90 + comp) % 360);}
@@ -100,16 +115,17 @@ exports.circle_traj = function circle_traj(dir) {
 
   } else if (gen_diff >= slack) {
     // traj = Math.round((posa + 90 + comp/6) % 360);
-    traj = valid_dist ? Math.round((posa + 90 + comp/5) % 360):Math.round((posa + 90 + comp/3) % 360); 
+    traj = valid_dist ? Math.round((posa + 90 + comp/divisor_l) % 360):Math.round((posa + 90 + comp/divisor_s) % 360); 
     // if (valid_dist) {traj = Math.round((posa + 90) % 360);} else {traj = Math.round((posa + 90 + comp/6) % 360);}
     // else {traj = Math.round((posa + 90 + comp) % 360);}
   } else {
     // traj = Math.round((posa + 270 - comp/6) % 360);
-    traj = valid_dist ? Math.round((posa + 270 + comp/5) % 360):Math.round((posa + 270 - comp/3) % 360);
+    traj = valid_dist ? Math.round((posa + 270 + comp/divisor_l) % 360):Math.round((posa + 270 - comp/divisor_s) % 360);
     // if (valid_dist) {traj = Math.round((posa + 270) % 360);} else {traj = Math.round((posa + 270 - comp/6) % 360);}
     // else {traj = Math.round((posa + 270 - comp) % 360);}
   }
   // console.log(posa,dir, dist, comp, speed);
+  if (speed > 100) {speed = 100;} else {speed = Math.round(speed);}
   return [traj, speed];
 }
   
@@ -125,7 +141,7 @@ exports.facilitate = function facilitate(sprkp) {
   let stopped = false;
   let doa = sp.getDoa();
   let direction = sp.getDirection();
-  let target_reached = false;
+  let target_reached = [false, false];
   let trajsp = this.circle_traj(doa);
   // let mov_mode = 'listen';
   let listen_target = doa;
@@ -136,6 +152,7 @@ exports.facilitate = function facilitate(sprkp) {
   // let targeting_start_time;
   let strictness = 1;
 
+  let prev_trajsp = [0, 90];
   setInterval(() => {
     let curr_time = new Date();
     let curr_time_stmp = curr_time.getTime(); // /1000
@@ -158,10 +175,11 @@ exports.facilitate = function facilitate(sprkp) {
 
       if (person_sp) {
         stasis = false;
-        // console.log(stasis);
         listen_target = doa;
+        // console.log('Target: '+listen_target);
       }
       target_reached = odo.reached_target(listen_target);
+      // console.log(listen_target, target_reached);
       if (!target_reached[strictness]) {
         stasis = false;
         trajsp = this.circle_traj(listen_target);
@@ -220,17 +238,19 @@ exports.facilitate = function facilitate(sprkp) {
     }
 
     // Roll
-    // console.log(stasis, stopped, strictness);
     if (stasis && !stopped) {
       strictness = 0;
       stopped = true;
-      sprkp.roll(0, 0);
-      // console.log(stasis, stopped, strictness);
+      sprkp.roll(0, doa);
+      console.log('Stop!');
+      // sprkp.ping();
     }
-    if (!stasis) {
+    if (!stasis && stopped) {
+    // if (!stasis) {
       strictness = 1;
       stopped = false;
-      // console.log(stasis, stopped, strictness);
+      console.log('Go!');
+      // sprkp.ping();
     }
 
     if (!target_reached[strictness] && !stasis) {
@@ -239,7 +259,7 @@ exports.facilitate = function facilitate(sprkp) {
       let speed = trajsp[1];
       sph_traj = odo.coord_convert(traj);
       sprkp.roll(speed, sph_traj);
-      // console.log(speed);
+      console.log(speed, sph_traj);
       // prp.ppSphero();
     }
   }, 500);

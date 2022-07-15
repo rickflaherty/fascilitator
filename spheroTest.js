@@ -4,6 +4,7 @@ const odo = require('./odo');
 const sp = require('./doa');
 const people = require("./people");
 const facil = require('./facilitate');
+const { exit } = require('process');
 
 let useBall = true;
 
@@ -27,10 +28,10 @@ function selectSphero(spheros) {
   }
 }
 
-async function initiate(sprkp) {
+function initiate(sprkp, callback) {
   console.log('Setup…');
   sprkp.color('orange');
-  await facil.initialRoll(sprkp);
+  facil.initialRoll(sprkp, () => callback(true), console.log('Initiated'));
 }
 
 function main(sprkp) {
@@ -56,14 +57,15 @@ if (sprkp) {
   sprkp.connect().then(async () => {
     try {
       // Stream Sphero position and speech information
+      sprkp.ping();
+      await delay(500);
       odo.streamOdo(sprkp);
       sp.streamDoa();
       await delay(2000);
-      await initiate(sprkp);
-      await delay(500);
-      main(sprkp);
+      initiate(sprkp, () => main(sprkp));
     } catch (error) {
       console.error(error);
+      sprkp.roll(0,0);
     }
   });
 } else { // Or analyze using Mic-Array w/o Sphero
