@@ -46,11 +46,11 @@ const sprkp = selectSphero(spheros);
 // Set # of people
 let n = 3
 if (process.argv.length > 3) {
-  console.log(process.argv[3]);
+  // console.log(process.argv[3]);
   n = process.argv[3];
 }
 people.setNumOfPeople(n);
-for (i=1;i<=n;i++) {
+for (i=0;i<n;i++) {
   console.log('Person '+i+': ' + people.pers2dir(i) +'º');
 }
 
