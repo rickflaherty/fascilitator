@@ -15,17 +15,6 @@ function colorCodeTarget(sprkp, person) {
     }
 }
 
-async function waitUntil(condition) {
-  return await new Promise(resolve => {
-    const interval = setInterval(() => {
-      if (condition) {
-        resolve('foo');
-        clearInterval(interval);
-      };
-    }, 1000);
-  });
-}
-
 exports.initialRoll = function initialRoll(sprkp, callback) {
   const target = 90;
   let target_reached = odo.reached_target(target);
@@ -99,15 +88,15 @@ exports.circle_traj = function circle_traj(dir) {
   }
   
   let valid_dist = innerDist < dist && dist < outerDist;
-  let divisor_l = Math.round(Math.abs(4 * (gen_diff/180)))+1
-  let divisor_s = Math.round(Math.abs(2 * (gen_diff/180)))+1
+  let divisor_l = Math.round(Math.abs(10 * (gen_diff/180)))+1
+  let divisor_s = Math.round(Math.abs(5 * (gen_diff/180)))+1
   // console.log(divisor_l, divisor_s);
   // console.log(valid_dist, dist);
   // clockwise or anti-clockwise or no rotation
   if (-slack < gen_diff && gen_diff < slack) {
     // speed -= Math.abs(gen_diff) * 2/5; // Stasis
     if (valid_dist) {speed -= fund_speed+1;} // Stasis
-    else {8;} //Math.abs(dist-centerDist);
+    else {speed = 7;} //Math.abs(dist-centerDist);
 
     traj = Math.round((posa + 90 + comp) % 360);
     // if (valid_dist) {traj = Math.round((posa + 90 + comp) % 360);}
