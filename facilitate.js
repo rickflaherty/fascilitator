@@ -15,35 +15,36 @@ function colorCodeTarget(sprkp, person) {
     }
 }
 
-exports.initialRoll = async function initialRoll(sprkp) {
+exports.initialRoll = function initialRoll(sprkp, callback) {
   const target = 90;
   let target_reached = odo.reached_target(target);
   if (target_reached[0]) {sprkp.roll(50, odo.coord_convert(90));}
-  
+
   let go_to_home_pos = setInterval(() => {
+    // stasis = false;
     target_reached = odo.reached_target(target);
-    if (target_reached[0]) {
+    if (!target_reached[0]) {
+      let trajsp = this.circle_traj(target);
+      let traj = trajsp[0];
+      let speed = trajsp[1];
+      let sph_traj = odo.coord_convert(traj);
+      sprkp.roll(speed, sph_traj);
+      // console.log(speed, sph_traj);
+    } else {
+      sprkp.roll(0, 0);
+      callback(true)
       clearInterval(go_to_home_pos);
     };
-    stasis = false;
-    let trajsp = this.circle_traj(target);
-    let traj = trajsp[0];
-    let speed = trajsp[1];
-    let sph_traj = odo.coord_convert(traj);
-    sprkp.roll(speed, sph_traj);
   }, 500);
-  if (target_reached[0]) {
-    return true;
-  }
 }
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
   const outerDist = 48;
-  const innerDist = 39;
+  const innerDist = 38;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
-  const slack = 0;
+  const slack = 10;
   
   // Position
   let [px, py] = odo.getPos();
@@ -79,12 +80,12 @@ exports.circle_traj = function circle_traj(dir) {
   }
   
   let valid_dist = innerDist < dist && dist < outerDist;
-  let divisor_l = Math.round(Math.abs(5 * (gen_diff/180)))+1
-  let divisor_s = Math.round(Math.abs(3 * (gen_diff/180)))+1
+  let divisor_l = Math.round(Math.abs(10 * (gen_diff/180)))+1
+  let divisor_s = Math.round(Math.abs(5 * (gen_diff/180)))+1
   // clockwise or anti-clockwise or no rotation
   if (-slack < gen_diff && gen_diff < slack) {
     if (valid_dist) {speed -= fund_speed+1;} // Stasis
-    else {speed = 5;} //Math.abs(dist-centerDist);
+    else {speed = 7;} //Math.abs(dist-centerDist);
     traj = Math.round((posa + 90 + comp) % 360);
 
   } else if (gen_diff >= slack) {
@@ -92,6 +93,7 @@ exports.circle_traj = function circle_traj(dir) {
   } else {
     traj = valid_dist ? Math.round((posa + 270 + comp/divisor_l) % 360):Math.round((posa + 270 - comp/divisor_s) % 360);
   }
+  if (speed > 100) {speed = 100;} else if (speed < 0) {speed = 0;} else {speed = Math.round(speed);}
   return [traj, speed];
 }
   
@@ -182,10 +184,12 @@ exports.facilitate = function facilitate(sprkp) {
       strictness = 0;
       stopped = true;
       sprkp.roll(0, doa);
+      // console.log('Stop!');
     }
     if (!stasis) {
       strictness = 1;
       stopped = false;
+      // console.log('Go!');
     }
 
     if (!target_reached[strictness] && !stasis) {
@@ -194,6 +198,7 @@ exports.facilitate = function facilitate(sprkp) {
       let speed = trajsp[1];
       sph_traj = odo.coord_convert(traj);
       sprkp.roll(speed, sph_traj);
+      // console.log(speed, sph_traj);
       // prp.ppSphero();
     }
   }, 500);
