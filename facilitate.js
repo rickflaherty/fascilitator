@@ -39,8 +39,8 @@ exports.initialRoll = async function initialRoll(sprkp) {
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 45;
-  const innerDist = 35;
+  const outerDist = 40;
+  const innerDist = 30;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
   const slack = 0;
