@@ -54,9 +54,6 @@ exports.getPersonSpeaking = function getPersonSpeaking() {
 
 exports.target_spoke = function target_spoke(person) {
   let spoke = person_speaking == person;
-  // if (spoke) {
-  //   console.log('Target spoke');
-  // }
   return spoke;
 }
 
@@ -73,7 +70,7 @@ exports.streamDoa = async function streamDoa(n) {
       let time_stmp = dt.getFullYear() + '-' + dt.getMonth() + '-' + dt.getDate() + ' ' + dt.getHours() + ':' + dt.getMinutes() + ':' + dt.getSeconds() + '.' + dt.getMilliseconds()
 
       // Section data
-      let log_vars = JSON.parse(msg)
+      let log_vars = JSON.parse(msg);
       let snap = {
         'timestamp': time_stmp,
         'start_time': log_vars.start_time,
@@ -84,59 +81,23 @@ exports.streamDoa = async function streamDoa(n) {
         'speech': log_vars.speech, 
         'responses': log_vars.responses,
         'scores': log_vars.scores,
-        'exclusivity': log_vars.exclusivity
-      }
+        'exclusivity': log_vars.exclusivity,
+        'next_speaker': log_vars.next_speaker
+      };
       data.push(snap);
 
       section_start_time = log_vars.start_time * 1000;
+      doa = log_vars.doa;
       person_speaking = log_vars.person_speaking;
 
       // Overall data
       avrg_sp_t = log_vars.avrg_speech_time;
-      let responses = log_vars.responses
-      let scores = log_vars.scores
+      let responses = log_vars.responses;
+      let scores = log_vars.scores;
+      direction = people.pers2dir(log_vars.next_speaker);
 
       // Print data
       prp.pretty_print(data[data.length - 1]);
-
-      // Interest and who to roll to
-      // TODO Move this to the Python code
-      // vars: speaker, num_of_people, responses, scores, participants[speaker][mid]
-      if (log_vars.person_speaking != null) {
-        let speaker_i = log_vars.person_speaking;
-        let response_sum = 0;
-        for (i = 0; i < people.getNumOfPeople(); i++) {
-          response_sum += responses[speaker_i][i];
-        }
-
-        let interests = []
-        for (i=0;i<people.getNumOfPeople();i++) {
-          interests.push(0);
-        }
-
-        for (i = 0; i < 3; i++) {
-          if (i != speaker_i) {
-            let prob_other_repsonds = 0.5;
-            if (response_sum != 0) {
-              prob_other_repsonds = 1 - (responses[speaker_i][i] / response_sum);
-            }
-            let interest = scores[i] * prob_other_repsonds;
-            interests[i] = interest;
-          }
-        }
-        let interest_sum = 0;
-        for (i = 0; i < 3; i++) {
-          interest_sum += interests[i];
-        }
-        if (interest_sum != 0) {
-          roll_to = interests.indexOf(Math.max(...interests)) + 1;
-        }
-      }
-      if (roll_to != 0){
-        direction = people.pers2dir(roll_to);
-      }
-      // DOA
-      doa = log_vars.doa;
     });
 
     contrib.contrib(pyshell, myEmitter);

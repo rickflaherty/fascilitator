@@ -39,6 +39,8 @@ exports.pretty_print = function pretty_print(entry) {
     exclusivity_cubes += '■';
   }
   process.stdout.write(`Exclusivity: ' ${Math.round(entry.exclusivity * 100)}% | ${exclusivity_cubes}`);
+  process.stdout.write('\n');
+  process.stdout.write(`Person ${entry.next_speaker} should speak next`)
   process.stdout.write('\n\n');
 }
 

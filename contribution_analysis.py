@@ -39,7 +39,8 @@ class Snap:
         'speech': [],
         'responses': [],
         'scores': [],
-        'exclusivity': 1
+        'exclusivity': 1,
+        'next_speaker': None
     }
 
     def __init__(self, prev_snapshot = None):
@@ -107,6 +108,14 @@ def contrib(mic_tuning: Tuning, group: Group):
     responses = [[0 for i in range(group.numOfPeople)] for j in range(group.numOfPeople)]
     scores = [1/group.numOfPeople for i in range(group.numOfPeople)]
     exclusivity = 0
+    roll_to = None
+
+    prev_update = {
+        'speech': speech,
+        'responses': responses,
+        'scores': scores 
+    }
+    prev_snapshot.batchUpdate(prev_update)
 
     while True:
         # Determine snap
@@ -146,6 +155,19 @@ def contrib(mic_tuning: Tuning, group: Group):
                 active_speaker = None
         prev_speaker = speaker
 
+        roll_to = None
+        if speaker != None:
+            response_sum = sum(responses[speaker])
+            interests = [0 for i in range(group.numOfPeople)]
+            for i in range(group.numOfPeople):
+                if i != speaker:
+                    prob_other_responds = 1 - (responses[speaker][i] / response_sum) if response_sum != 0 else 0.5
+                    interest = scores[i] * prob_other_responds
+                    interests[i] = interest
+            interest_sum = sum(interests)
+            if interest_sum != 0: roll_to = interests.index(max(interests))
+        # direction_to_roll_to = group.participants[roll_to]['mid'] if roll_to else None
+
         # Update Snap
         data = {
             'timestamp': curr_time,
@@ -157,7 +179,8 @@ def contrib(mic_tuning: Tuning, group: Group):
             'speech': speech,
             'responses': responses,
             'scores': scores,
-            'exclusivity': exclusivity
+            'exclusivity': exclusivity,
+            'next_speaker': roll_to
         }
         curr_snapshot.batchUpdate(data)
 
