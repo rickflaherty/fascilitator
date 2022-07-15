@@ -130,7 +130,7 @@ exports.facilitate = function facilitate(sprkp) {
     if (mov_mode == 'listen'){
       let person_sp = sp.getPersonSpeaking();
 
-      if (person_sp) {
+      if (person_sp != null) {
         stasis = false;
         listen_target = doa;
       }
@@ -144,7 +144,7 @@ exports.facilitate = function facilitate(sprkp) {
       const thresh_min = 2000;
       let threshold = avrg_sp_t * 1000 / 2 > thresh_min ? avrg_sp_t * 1000 / 2 : thresh_min;
       let person_speaking = sp.getPersonSpeaking();
-      if (section_time > threshold && roll_to != 0 && person_speaking != 0) {
+      if (section_time > threshold && roll_to != null && person_speaking != null) {
         mov_mode = 'target';
         target = direction;
         // target_person = people.dir2pers(target);

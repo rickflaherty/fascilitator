@@ -63,7 +63,7 @@ class Snap:
             self.update(key, value)
 
 
-def is_within_angle_range(angle, angle_range: list[int]):
+def is_within_angle_range(angle, angle_range):
     """Determine if angle is within a range (360º == 0º)"""
     alt_angle = angle - angle_range[0] if angle - angle_range[0] >= 0 else angle - angle_range[0] + 360
     end_angle = angle_range[1] - angle_range[0] if angle_range[1] - angle_range[0] > 0 else angle_range[1] - angle_range[0] + 360
