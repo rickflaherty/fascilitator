@@ -39,8 +39,8 @@ exports.initialRoll = async function initialRoll(sprkp) {
 
 exports.circle_traj = function circle_traj(dir) {
   // Environmental parameters
-  const outerDist = 45;
-  const innerDist = 35;
+  const outerDist = 48;
+  const innerDist = 39;
   const range = outerDist - innerDist;
   const centerDist = (range) / 2 + innerDist;
   const slack = 0;
@@ -59,26 +59,28 @@ exports.circle_traj = function circle_traj(dir) {
   if (difference > 180) {difference -= 360;}
   
   let gen_diff = Math.ceil(difference);
-  let fund_speed = Math.abs(gen_diff) * 2/5
+  let fund_speed = Math.abs(gen_diff) * 1/3
   speed = fund_speed; 
   
   let dist = Math.sqrt(px * px + py * py);
   
   if (dist > outerDist) { // Far
     comp = 90;
-    speed += 8 * Math.min((dist-outerDist) * (2/range), 1.0) + 5;
+    speed += 5 * Math.min((dist-outerDist) * (2/range), 1.0) + 7;
   } else if (dist < innerDist){ // Close
     comp = -90;
-    speed += 8 * Math.min((innerDist - dist) * (2/range), 1.0) + 5;
+    speed += 5 * Math.min((innerDist - dist) * (2/range), 1.0) + 7;
   } else if (dist > centerDist) {
     comp = 90 * Math.min((dist-centerDist) * (2/range), 1.0);
-    speed += 8;
+    speed += 7;
   } else if (dist < centerDist) {
     comp = -90 * Math.min((centerDist-dist) * (2/range), 1.0);
-    speed += 8;
+    speed += 7;
   }
   
   let valid_dist = innerDist < dist && dist < outerDist;
+  let divisor_l = Math.round(Math.abs(5 * (gen_diff/180)))+1
+  let divisor_s = Math.round(Math.abs(3 * (gen_diff/180)))+1
   // clockwise or anti-clockwise or no rotation
   if (-slack < gen_diff && gen_diff < slack) {
     if (valid_dist) {speed -= fund_speed+1;} // Stasis
@@ -86,9 +88,9 @@ exports.circle_traj = function circle_traj(dir) {
     traj = Math.round((posa + 90 + comp) % 360);
 
   } else if (gen_diff >= slack) {
-    traj = valid_dist ? Math.round((posa + 90 + comp/5) % 360):Math.round((posa + 90 + comp/3) % 360); 
+    traj = valid_dist ? Math.round((posa + 90 + comp/divisor_l) % 360):Math.round((posa + 90 + comp/divisor_s) % 360); 
   } else {
-    traj = valid_dist ? Math.round((posa + 270 + comp/5) % 360):Math.round((posa + 270 - comp/3) % 360);
+    traj = valid_dist ? Math.round((posa + 270 + comp/divisor_l) % 360):Math.round((posa + 270 - comp/divisor_s) % 360);
   }
   return [traj, speed];
 }
@@ -105,7 +107,7 @@ exports.facilitate = function facilitate(sprkp) {
   let stopped = false;
   let doa = sp.getDoa();
   let direction = sp.getDirection();
-  let target_reached = false;
+  let target_reached = [false, false];
   let trajsp = this.circle_traj(doa);
   let listen_target = doa;
   let traget_speaking = false;
@@ -179,7 +181,7 @@ exports.facilitate = function facilitate(sprkp) {
     if (stasis && !stopped) {
       strictness = 0;
       stopped = true;
-      sprkp.roll(0, 0);
+      sprkp.roll(0, doa);
     }
     if (!stasis) {
       strictness = 1;

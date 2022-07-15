@@ -84,7 +84,7 @@ def setup(n: int):
 
     if dev:
         tuning = Tuning(dev)
-        tuning.write('GAMMAVAD_SR', 4.8)
+        tuning.write('GAMMAVAD_SR', 5)
         return [tuning, group]
 
 
