@@ -164,7 +164,7 @@ def contrib(mic_tuning: Tuning, group: Group):
                 if i != speaker:
                     prob_other_responds = 1 - (responses[speaker][i] / response_sum) if response_sum != 0 else 0.5
                     normed_score = scores[i]*num_of_people
-                    score_factor = normed_score/3 if normed_score > 1 else 1/3
+                    score_factor = normed_score if normed_score > 2/3 else 2/3
                     ideal_prop_other_repsponds = (num_of_people-2)/(num_of_people-1)
                     interest = score_factor * (prob_other_responds/ideal_prop_other_repsponds)
                     # interest = normed_score/3 * prob_other_responds
