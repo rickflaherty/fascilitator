@@ -84,6 +84,13 @@ exports.streamDoa = async function streamDoa(n) {
         'exclusivity': log_vars.exclusivity,
         'next_speaker': log_vars.next_speaker
       };
+      let n = people.getNumOfPeople()
+      for (i=0;i<n;i++) {
+        snap[`speech${i}`] = log_vars.speech[i];
+        snap[`response${i}`] = log_vars.responses[i];
+        snap[`score${i}`] = log_vars.scores[i];
+      }
+
       data.push(snap);
 
       section_start_time = log_vars.start_time * 1000;
@@ -105,7 +112,7 @@ exports.streamDoa = async function streamDoa(n) {
 
     process.on('SIGINT', async () => {
       await delay(1000).then(() => {
-        logger.createConvoLogfile(data, start_dt).then(() => {
+        logger.createConvoLogfile(data, people.getNumOfPeople(), start_dt).then(() => {
           process.exit(0);
         });
       });
