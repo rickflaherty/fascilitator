@@ -1,6 +1,6 @@
 import csv
 import json
-import convcontrib2 as ctrb
+import convcontrib as ctrb
 
 data = []
 responses = []
@@ -14,9 +14,9 @@ with open('./data.csv', newline='') as csvfile:
 
 for d in data:
     response = [[],[],[]]
-    response[0] = list(map(int, d['Responses_to_Person_0'].split(',')))
-    response[1] = list(map(int, d['Responses_to_Person_1'].split(',')))
-    response[2] = list(map(int, d['Responses_to_Person_2'].split(',')))
+    response[0] = list(map(int, d['Responses to Person_0'].split(',')))
+    response[1] = list(map(int, d['Responses to Person_1'].split(',')))
+    response[2] = list(map(int, d['Responses to Person_2'].split(',')))
     responses.append(response)
 
 header = ['Spreadability of Person 0','Spreadability of Person 1','Spreadability of Person 2','Exclusivity']
