@@ -42,11 +42,15 @@ f = [[0,1,1],
      [1,0,1],
      [1,1,0]]
 
-g = [[0,0,1],
+g = [[0,0,2],
      [0,0,1],
-     [0,0,0]]
+     [2,1,0]]
 
-tests = [a,b,c,d,e,f,g]
+h = [[0,0,2],
+     [0,0,1],
+     [3,1,0]]
+
+tests = [a,b,c,d,e,f,g,h]
 
 for i, test_matrix in enumerate(tests,1):
     scores, exclusivity = ctrb.contributions(test_matrix)

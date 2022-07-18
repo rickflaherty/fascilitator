@@ -91,6 +91,7 @@ def setup(n: int):
 def contrib(mic_tuning: Tuning, group: Group):
     """Print a snapshot of the conversation to console whenever there updated information"""
     prev_snapshot = Snap()
+    num_of_people = group.numOfPeople
 
     curr_time = datetime.timestamp(datetime.now())
     start_time = curr_time
@@ -104,9 +105,9 @@ def contrib(mic_tuning: Tuning, group: Group):
     speech_count = 0
     avrg_speech_time = 0
 
-    speech = [0 for i in range(group.numOfPeople)]
-    responses = [[0 for i in range(group.numOfPeople)] for j in range(group.numOfPeople)]
-    scores = [1/group.numOfPeople for i in range(group.numOfPeople)]
+    speech = [0 for i in range(num_of_people)]
+    responses = [[0 for i in range(num_of_people)] for j in range(num_of_people)]
+    scores = [1/num_of_people for i in range(num_of_people)]
     exclusivity = 0
     roll_to = None
 
@@ -158,11 +159,15 @@ def contrib(mic_tuning: Tuning, group: Group):
         roll_to = None
         if speaker != None:
             response_sum = sum(responses[speaker])
-            interests = [0 for i in range(group.numOfPeople)]
-            for i in range(group.numOfPeople):
+            interests = [0 for i in range(num_of_people)]
+            for i in range(num_of_people):
                 if i != speaker:
                     prob_other_responds = 1 - (responses[speaker][i] / response_sum) if response_sum != 0 else 0.5
-                    interest = scores[i] * prob_other_responds
+                    normed_score = scores[i]*num_of_people
+                    score_factor = normed_score/3 if normed_score > 1 else 1/3
+                    ideal_prop_other_repsponds = (num_of_people-2)/(num_of_people-1)
+                    interest = score_factor * (prob_other_responds/ideal_prop_other_repsponds)
+                    # interest = normed_score/3 * prob_other_responds
                     interests[i] = interest
             interest_sum = sum(interests)
             if interest_sum != 0: roll_to = interests.index(max(interests))
