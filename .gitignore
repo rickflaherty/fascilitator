@@ -1,4 +1,9 @@
 /.bashrc
 /__pycache__
-/logs
+/logs/*
 /tuning_bkup.py
+/.vscode/
+/node_modules/
+/package.json
+/package-lock.json
+/output.csv
